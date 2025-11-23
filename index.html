@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI 語音筆記助手 | Voice Note & AI Summary</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', '"Noto Sans TC"', 'sans-serif'],
+                    },
+                    colors: {
+                        // 使用 CSS 變數來支援動態換色
+                        brand: {
+                            50: 'hsl(var(--brand-h) var(--brand-s) 97%)',
+                            100: 'hsl(var(--brand-h) var(--brand-s) 94%)',
+                            200: 'hsl(var(--brand-h) var(--brand-s) 86%)',
+                            300: 'hsl(var(--brand-h) var(--brand-s) 77%)',
+                            400: 'hsl(var(--brand-h) var(--brand-s) 66%)',
+                            500: 'hsl(var(--brand-h) var(--brand-s) 50%)', // 主要顏色
+                            600: 'hsl(var(--brand-h) var(--brand-s) 42%)',
+                            700: 'hsl(var(--brand-h) var(--brand-s) 35%)',
+                            900: 'hsl(var(--brand-h) var(--brand-s) 25%)',
+                        },
+                        accent: { 50: '#fdf4ff', 100: '#fae8ff', 500: '#d946ef', 600: '#c026d3' }
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'wave': 'wave 1.2s ease-in-out infinite',
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        wave: {
+                            '0%, 100%': { height: '10%' },
+                            '50%': { height: '100%' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Plus+Jakarta+Sans:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 預設主題色 (Teal) */
+            --brand-h: 171;
+            --brand-s: 77%;
+        }
+
+        body {
+            background-color: #f3f4f6;
+            overflow-x: hidden;
+            transition: background-color 0.3s ease;
+        }
+        /* 隱藏 Scrollbar 但保持功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* 聲波動畫延遲 */
+        .wave-bar:nth-child(1) { animation-delay: 0.0s; }
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+        .wave-bar:nth-child(6) { animation-delay: 0.5s; }
+        .wave-bar:nth-child(7) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(8) { animation-delay: 0.1s; }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 手機版模擬樣式 */
+        .mobile-mode {
+            max-width: 400px !important;
+            min-height: 800px !important;
+            max-height: 90vh;
+            border-radius: 40px !important;
+            flex-direction: column !important;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border: 8px solid rgba(255,255,255,0.4);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+        }
+        
+        .mobile-mode .panel-left {
+            width: 100% !important;
+            height: auto !important;
+            border-right: none !important;
+            border-bottom: 1px solid rgba(255,255,255,0.5);
+            padding: 1.5rem !important;
+            flex-shrink: 0;
+        }
+        
+        .mobile-mode .panel-right {
+            width: 100% !important;
+            flex: 1;
+            padding: 1.5rem !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 relative selection:bg-brand-200 selection:text-brand-900">
+
+    <!-- 背景裝飾 (動態光暈，顏色會跟隨主題變換) -->
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+        <div id="bgBlob1" class="absolute top-0 left-1/4 w-96 h-96 bg-brand-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob transition-colors duration-700"></div>
+        <div id="bgBlob2" class="absolute top-0 right-1/4 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000 transition-colors duration-700"></div>
+        <div id="bgBlob3" class="absolute -bottom-8 left-1/3 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-4000 transition-colors duration-700"></div>
+    </div>
+
+    <!-- 頂部工具列 -->
+    <div class="fixed top-4 right-4 z-50 flex items-center gap-3 bg-white/80 backdrop-blur-md p-2 rounded-full shadow-lg border border-white/50">
+        
+        <!-- 顏色選擇器 Trigger -->
+        <div class="relative group">
+            <button id="themeBtn" class="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-600" title="更換主題色">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-brand-500">
+                    <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm11.378-3.917c-.89-.777-2.366-.777-3.255 0a.75.75 0 01-.988-1.129c1.454-1.272 3.776-1.272 5.23 0 1.513 1.324 1.513 3.518 0 4.842a3.75 3.75 0 01-.837.552c-.676.328-1.028.774-1.028 1.152v.75a.75.75 0 01-1.5 0v-.75c0-1.279 1.06-2.107 1.875-2.502.182-.088.351-.199.503-.331.83-.727.83-1.857 0-2.584zM12 18a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd" />
+                    <path d="M20.25 12a8.25 8.25 0 11-16.5 0 8.25 8.25 0 0116.5 0zm-10.5-6a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm6.364 1.864a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM6 10.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm3.364 6.364a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM18 13.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
+                </svg>
+            </button>
+            <!-- 顏色選單 (修復版：增加 pt-4 作為隱形橋樑，並調整結構確保 hover 不中斷) -->
+            <div class="absolute right-0 top-full pt-4 w-48 hidden group-hover:block hover:block z-50">
+                <div class="p-3 bg-white rounded-2xl shadow-xl border border-gray-100 transform transition-all duration-200 origin-top-right">
+                    <p class="text-xs font-bold text-gray-400 mb-2 px-1">選擇主題色</p>
+                    <div class="grid grid-cols-5 gap-2 mb-3">
+                        <button onclick="setTheme(171, '77%')" class="w-6 h-6 rounded-full bg-[#14b8a6] ring-2 ring-offset-1 ring-transparent hover:ring-gray-300 transition-shadow" title="Teal"></button>
+                        <button onclick="setTheme(217, '91%')" class="w-6 h-6 rounded-full bg-[#3b82f6] ring-2 ring-offset-1 ring-transparent hover:ring-gray-300 transition-shadow" title="Blue"></button>
+                        <button onclick="setTheme(270, '95%')" class="w-6 h-6 rounded-full bg-[#a855f7] ring-2 ring-offset-1 ring-transparent hover:ring-gray-300 transition-shadow" title="Purple"></button>
+                        <button onclick="setTheme(340, '82%')" class="w-6 h-6 rounded-full bg-[#f43f5e] ring-2 ring-offset-1 ring-transparent hover:ring-gray-300 transition-shadow" title="Rose"></button>
+                        <button onclick="setTheme(32, '95%')" class="w-6 h-6 rounded-full bg-[#f97316] ring-2 ring-offset-1 ring-transparent hover:ring-gray-300 transition-shadow" title="Orange"></button>
+                    </div>
+                    <div class="border-t pt-2">
+                         <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer hover:text-brand-600 transition-colors">
+                            <input type="color" id="customColorPicker" class="w-5 h-5 rounded cursor-pointer border-none bg-transparent" oninput="setCustomTheme(this.value)">
+                            自定義顏色
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-px h-6 bg-gray-200"></div>
+
+        <!-- 視圖切換按鈕 -->
+        <button id="viewToggleBtn" onclick="toggleViewMode()" class="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-600 flex items-center gap-2" title="切換手機/電腦檢視">
+            <span id="viewIconDesktop" class="block">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                    <path d="M11.47 3.84a.75.75 0 011.06 0l8.635 8.635a.75.75 0 11-1.06 1.06l-8.635-8.635a.75.75 0 010-1.06z" />
+                    <path d="M12.75 7.5a.75.75 0 00-1.5 0v9.863l-1.84-1.84a.75.75 0 00-1.06 1.06l3.113 3.114a.75.75 0 001.274 0l3.114-3.114a.75.75 0 00-1.06-1.06l-1.841 1.84V7.5z" />
+                    <path d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" fill-opacity="0" /> 
+                    <path d="M10.5 1.875a1.125 1.125 0 012.25 0v8.219c.517.162 1.02.382 1.5.659V3.375a1.125 1.125 0 00-2.25 0v10.929a3.755 3.755 0 11-1.5 0V1.875z" />
+                    <path fill-rule="evenodd" d="M2.25 6.75c0-2.485 2.015-4.5 4.5-4.5h10.5a4.5 4.5 0 014.5 4.5v10.5a4.5 4.5 0 01-4.5 4.5H6.75a4.5 4.5 0 01-4.5-4.5V6.75zm4.5-3a3 3 0 00-3 3v10.5a3 3 0 003 3h10.5a3 3 0 003-3V6.75a3 3 0 00-3-3H6.75z" clip-rule="evenodd" />
+                    <path d="M18.75 19.5h-13.5v-12h13.5v12z" opacity="0.3"/>
+                </svg>
+            </span>
+             <span id="viewIconMobile" class="hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-brand-600">
+                    <path d="M10.5 18.75a.75.75 0 000 1.5h3a.75.75 0 000-1.5h-3z" />
+                    <path fill-rule="evenodd" d="M8.625 1.5a3.375 3.375 0 00-3.375 3.375v14.25A3.375 3.375 0 008.625 22.5h6.75a3.375 3.375 0 003.375-3.375V4.875A3.375 3.375 0 0015.375 1.5h-6.75zM7.5 4.875a1.875 1.875 0 011.875-1.875h6.75a1.875 1.875 0 011.875 1.875v14.25a1.875 1.875 0 01-1.875 1.875h-6.75A1.875 1.875 0 017.5 19.125V4.875z" clip-rule="evenodd" />
+                </svg>
+            </span>
+            <span class="text-xs font-bold hidden md:block" id="viewModeText">切換手機版</span>
+        </button>
+    </div>
+
+    <!-- 主應用容器 -->
+    <div id="appContainer" class="container max-w-5xl w-full glass-panel shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] rounded-[2.5rem] overflow-hidden flex flex-col md:flex-row min-h-[650px] transition-all duration-500">
+        
+        <!-- 左側控制面板 -->
+        <div class="panel-left w-full md:w-1/3 bg-white/40 border-r border-white/50 p-8 flex flex-col justify-between relative transition-all duration-500">
+            
+            <!-- App Header -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-400 to-brand-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/30 transition-all duration-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                            <path d="M8.25 4.5a3.75 3.75 0 117.5 0v8.25a3.75 3.75 0 11-7.5 0V4.5z" />
+                            <path d="M6 10.5a.75.75 0 01.75.75v1.5a5.25 5.25 0 1010.5 0v-1.5a.75.75 0 011.5 0v1.5a6.751 6.751 0 01-6 6.709v2.291h3a.75.75 0 010 1.5h-7.5a.75.75 0 010-1.5h3v-2.291a6.751 6.751 0 01-6-6.709v-1.5A.75.75 0 016 10.5z" />
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800 tracking-tight">Voice Note AI</h1>
+                </div>
+                <p class="text-xs font-medium text-gray-400 pl-1 tracking-wider">RECORD & SUMMARIZE</p>
+            </div>
+
+            <!-- 視覺化聲波 -->
+            <div class="flex-1 flex flex-col justify-center items-center py-8 md:py-12">
+                <div id="visualizer" class="h-16 flex items-center gap-1.5 opacity-30 transition-opacity duration-300">
+                    <!-- 動態生成的 Bar -->
+                    <div class="wave-bar w-1.5 h-3 bg-gray-800 rounded-full transition-all duration-300"></div>
+                    <div class="wave-bar w-1.5 h-5 bg-gray-800 rounded-full transition-all duration-300"></div>
+                    <div class="wave-bar w-1.5 h-8 bg-gray-800 rounded-full transition-all duration-300"></div>
+                    <div class="wave-bar w-1.5 h-4 bg-gray-800 rounded-full transition-all duration-300"></div>
+                    <div class="wave-bar w-1.5 h-7 bg-gray-800 rounded-full transition-all duration-300"></div>
+                    <div class="wave-bar w-1.5 h-3 bg-gray-800 rounded-full transition-all duration-300"></div>
+                    <div class="wave-bar w-1.5 h-5 bg-gray-800 rounded-full transition-all duration-300"></div>
+                    <div class="wave-bar w-1.5 h-2 bg-gray-800 rounded-full transition-all duration-300"></div>
+                </div>
+                <div id="timerDisplay" class="mt-6 text-4xl font-bold text-gray-800 font-sans tabular-nums tracking-tight">00:00</div>
+                <div id="statusText" class="mt-2 text-sm font-medium text-gray-400 bg-white/50 px-3 py-1 rounded-full">Ready to record</div>
+            </div>
+
+            <!-- 主要按鈕 -->
+            <div class="flex flex-col gap-3">
+                <button id="recordButton" class="group w-full py-4 rounded-2xl bg-gray-900 text-white font-bold text-lg shadow-xl shadow-gray-900/20 hover:scale-[1.02] hover:bg-black transition-all duration-300 flex items-center justify-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-red-500 group-hover:animate-ping"></div>
+                    <span id="recordBtnText">Start Recording</span>
+                </button>
+
+                <div class="flex gap-3">
+                     <button id="clearButton" class="flex-1 py-3 rounded-xl bg-white border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 hover:border-gray-300 transition-all duration-300">
+                        清除
+                    </button>
+                    <button id="summarizeButton" disabled class="flex-[2] py-3 rounded-xl bg-gradient-to-r from-brand-500 to-brand-400 text-white font-bold text-sm shadow-lg shadow-brand-500/25 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed hover:shadow-brand-500/40 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                            <path fill-rule="evenodd" d="M9 4.5a.75.75 0 01.721.544l.813 2.846a3.75 3.75 0 002.576 2.576l2.846.813a.75.75 0 010 1.442l-2.846.813a3.75 3.75 0 00-2.576 2.576l-.813 2.846a.75.75 0 01-1.442 0l-.813-2.846a3.75 3.75 0 00-2.576-2.576l-2.846-.813a.75.75 0 010-1.442l2.846-.813a3.75 3.75 0 002.576-2.576l.813-2.846A.75.75 0 019 4.5zM6.375 9a2.25 2.25 0 012.25-2.25h5a2.25 2.25 0 012.25 2.25v5a2.25 2.25 0 01-2.25 2.25h-5A2.25 2.25 0 016.375 14v-5z" clip-rule="evenodd" />
+                        </svg>
+                        AI 分析
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側內容顯示區 -->
+        <div class="panel-right w-full md:w-2/3 bg-white/60 p-8 flex flex-col transition-all duration-500">
+            
+            <!-- Tab Switcher -->
+            <div class="flex items-center p-1 bg-gray-200/50 rounded-xl w-fit mb-6 backdrop-blur-sm mx-auto md:mx-0">
+                <button id="tabTranscript" class="px-5 py-2 rounded-lg text-sm font-bold text-gray-800 bg-white shadow-sm transition-all duration-300">逐字稿</button>
+                <button id="tabAnalysis" class="px-5 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-700 transition-all duration-300 relative">
+                    AI 洞察
+                    <span id="aiBadge" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand-500 rounded-full ring-2 ring-white"></span>
+                </button>
+            </div>
+
+            <!-- 內容區域 -->
+            <div class="flex-1 relative overflow-hidden min-h-[300px]">
+                
+                <!-- 1. 逐字稿視圖 -->
+                <div id="viewTranscript" class="absolute inset-0 flex flex-col h-full transition-all duration-500 ease-out">
+                    <textarea id="transcriptArea" class="w-full h-full bg-transparent border-none resize-none outline-none text-gray-700 text-lg leading-relaxed font-medium placeholder-gray-400/70 no-scrollbar" placeholder="點擊「Start Recording」開始，您的對話將即時顯示於此..."></textarea>
+                    
+                    <!-- 底部工具列 -->
+                    <div class="absolute bottom-0 right-0 flex gap-2">
+                         <button onclick="copyText()" class="p-2 rounded-lg bg-white/80 hover:bg-white text-gray-500 hover:text-brand-600 shadow-sm border border-gray-100 transition-colors text-xs font-bold flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                            </svg>
+                            複製
+                        </button>
+                        <button onclick="downloadTxt()" class="p-2 rounded-lg bg-white/80 hover:bg-white text-gray-500 hover:text-brand-600 shadow-sm border border-gray-100 transition-colors text-xs font-bold flex items-center gap-1">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                            存檔
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. AI 分析視圖 (初始隱藏) -->
+                <div id="viewAnalysis" class="absolute inset-0 h-full overflow-y-auto no-scrollbar opacity-0 translate-x-10 pointer-events-none transition-all duration-500 ease-out pb-10">
+                    
+                    <!-- Loading State -->
+                    <div id="aiLoading" class="hidden flex flex-col items-center justify-center h-full text-gray-400 space-y-4">
+                        <div class="relative w-16 h-16">
+                            <div class="absolute top-0 left-0 w-full h-full border-4 border-brand-100 rounded-full"></div>
+                            <div class="absolute top-0 left-0 w-full h-full border-4 border-brand-500 rounded-full border-t-transparent animate-spin"></div>
+                        </div>
+                        <p class="text-sm font-medium animate-pulse">AI 正在消化內容並提煉精華...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="aiEmpty" class="flex flex-col items-center justify-center h-full text-gray-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mb-4 opacity-50">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                        </svg>
+                        <p>請錄音並點擊「AI 分析」</p>
+                    </div>
+
+                    <!-- Result Content -->
+                    <div id="aiContent" class="hidden space-y-6">
+                        
+                        <!-- 標籤區 -->
+                        <div class="flex flex-wrap gap-2" id="aiTags">
+                            <!-- Tags will be injected here -->
+                        </div>
+
+                        <!-- 摘要區 -->
+                        <div class="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-sm">
+                            <h3 class="text-brand-700 font-bold mb-3 flex items-center gap-2 text-sm uppercase tracking-wider">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                                    <path fill-rule="evenodd" d="M4.125 3C3.089 3 2.25 3.84 2.25 4.875V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V4.875C21.75 3.84 20.911 3 19.875 3H4.125zM12 9.75a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5H12zm-.75-2.25a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5H12a.75.75 0 01-.75-.75zM6 12.75a.75.75 0 000 1.5h12a.75.75 0 000-1.5H6zm0 4.5a.75.75 0 000 1.5h12a.75.75 0 000-1.5H6z" clip-rule="evenodd" />
+                                </svg>
+                                重點摘要
+                            </h3>
+                            <div id="aiSummaryText" class="text-gray-700 leading-relaxed text-base prose-sm"></div>
+                        </div>
+
+                        <!-- 待辦事項區 -->
+                        <div class="bg-accent-50/80 rounded-2xl p-6 border border-accent-100 shadow-sm">
+                            <h3 class="text-accent-600 font-bold mb-3 flex items-center gap-2 text-sm uppercase tracking-wider">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                                    <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" />
+                                </svg>
+                                待辦事項 (Action Items)
+                            </h3>
+                            <ul id="aiActionItems" class="space-y-2">
+                                <!-- Action items will be injected here -->
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-6 right-6 px-6 py-3 bg-gray-800 text-white rounded-full shadow-2xl transform translate-x-full opacity-0 transition-all duration-500 font-medium text-sm flex items-center gap-2 z-50">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-green-400">
+            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" />
+        </svg>
+        <span id="toastMsg">Operation successful</span>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let isRecording = false;
+        let recognition = null;
+        let startTime;
+        let timerInterval;
+        let finalTranscript = '';
+        let currentViewMode = 'desktop'; // 'desktop' or 'mobile'
+        
+        // --- DOM Elements ---
+        const els = {
+            recordBtn: document.getElementById('recordButton'),
+            recordBtnText: document.getElementById('recordBtnText'),
+            clearBtn: document.getElementById('clearButton'),
+            summarizeBtn: document.getElementById('summarizeButton'),
+            transcriptArea: document.getElementById('transcriptArea'),
+            visualizer: document.getElementById('visualizer'),
+            bars: document.querySelectorAll('.wave-bar'),
+            timer: document.getElementById('timerDisplay'),
+            status: document.getElementById('statusText'),
+            appContainer: document.getElementById('appContainer'),
+            viewToggleBtn: document.getElementById('viewToggleBtn'),
+            viewIconDesktop: document.getElementById('viewIconDesktop'),
+            viewIconMobile: document.getElementById('viewIconMobile'),
+            viewModeText: document.getElementById('viewModeText'),
+            
+            // Tabs
+            tabTranscript: document.getElementById('tabTranscript'),
+            tabAnalysis: document.getElementById('tabAnalysis'),
+            viewTranscript: document.getElementById('viewTranscript'),
+            viewAnalysis: document.getElementById('viewAnalysis'),
+            aiBadge: document.getElementById('aiBadge'),
+
+            // AI View
+            aiLoading: document.getElementById('aiLoading'),
+            aiEmpty: document.getElementById('aiEmpty'),
+            aiContent: document.getElementById('aiContent'),
+            aiTags: document.getElementById('aiTags'),
+            aiSummary: document.getElementById('aiSummaryText'),
+            aiActionItems: document.getElementById('aiActionItems'),
+            
+            // Toast
+            toast: document.getElementById('toast'),
+            toastMsg: document.getElementById('toastMsg')
+        };
+
+        // --- Gemini API Configuration ---
+        const apiKey = ""; 
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        // --- Setup Speech Recognition ---
+        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'zh-TW';
+            recognition.interimResults = true;
+            recognition.continuous = true;
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' '; // Space implies pause
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                // Auto-punctuation logic can be complex, keeping it raw for now
+                els.transcriptArea.value = finalTranscript + interimTranscript;
+                els.transcriptArea.scrollTop = els.transcriptArea.scrollHeight;
+                
+                if((finalTranscript + interimTranscript).length > 0) {
+                    els.summarizeBtn.disabled = false;
+                }
+            };
+
+            recognition.onerror = (event) => {
+                if(event.error !== 'no-speech') {
+                    console.error('Speech Error:', event.error);
+                    showToast('錄音暫時中斷，請重試', true);
+                    stopRecording();
+                }
+            };
+            
+            recognition.onend = () => {
+                if (isRecording) recognition.start(); // Auto-restart
+            };
+        } else {
+            alert('您的瀏覽器不支援語音識別，請使用 Chrome。');
+            els.recordBtn.disabled = true;
+        }
+
+        // --- Logic Functions ---
+
+        function startRecording() {
+            isRecording = true;
+            finalTranscript = els.transcriptArea.value; // Keep existing text
+            recognition.start();
+            
+            // UI Update
+            els.status.textContent = 'Recording in progress...';
+            els.status.classList.add('text-red-500', 'bg-red-50');
+            els.status.classList.remove('text-gray-400');
+            
+            els.recordBtn.classList.replace('bg-gray-900', 'bg-red-500');
+            els.recordBtn.classList.replace('hover:bg-black', 'hover:bg-red-600');
+            els.recordBtnText.textContent = 'Stop Recording';
+            
+            // Visualizer
+            els.visualizer.classList.replace('opacity-30', 'opacity-100');
+            els.bars.forEach(bar => {
+                bar.classList.add('animate-wave');
+                bar.classList.replace('bg-gray-800', 'bg-red-500');
+            });
+
+            // Timer
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            switchToTab('transcript');
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            recognition.stop();
+            
+            // UI Update
+            els.status.textContent = 'Recording paused';
+            els.status.classList.remove('text-red-500', 'bg-red-50');
+            els.status.classList.add('text-gray-400');
+            
+            els.recordBtn.classList.replace('bg-red-500', 'bg-gray-900');
+            els.recordBtn.classList.replace('hover:bg-red-600', 'hover:bg-black');
+            els.recordBtnText.textContent = 'Resume Recording';
+            
+            // Visualizer
+            els.visualizer.classList.replace('opacity-100', 'opacity-30');
+            els.bars.forEach(bar => {
+                bar.classList.remove('animate-wave');
+                bar.classList.replace('bg-red-500', 'bg-gray-800');
+            });
+
+            clearInterval(timerInterval);
+            if(els.transcriptArea.value.length > 5) els.summarizeBtn.disabled = false;
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const s = (elapsed % 60).toString().padStart(2, '0');
+            els.timer.textContent = `${m}:${s}`;
+        }
+
+        async function summarize() {
+            const text = els.transcriptArea.value.trim();
+            if (text.length < 10) {
+                showToast('內容太短，無法分析', true);
+                return;
+            }
+
+            switchToTab('analysis');
+            els.aiLoading.classList.remove('hidden');
+            els.aiEmpty.classList.add('hidden');
+            els.aiContent.classList.add('hidden');
+            els.summarizeBtn.disabled = true;
+
+            const prompt = `
+                你是一個專業的筆記分析師。請閱讀以下逐字稿，並產生一個 JSON 格式的回應，不需要 Markdown 標記，包含以下三個欄位：
+                1. summary: 一段流暢的繁體中文重點摘要（約 100 字）。
+                2. tags: 3-5 個關鍵字標籤（Array of strings）。
+                3. action_items: 條列出任何需要執行的待辦事項或決策，如果沒有明確事項，請歸納出關鍵結論（Array of strings）。
+
+                逐字稿內容：
+                ${text}
+            `;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                const data = await response.json();
+                const rawText = data.candidates[0].content.parts[0].text;
+                
+                // Clean code block markers if present
+                const jsonString = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+                const result = JSON.parse(jsonString);
+
+                renderAIResult(result);
+
+            } catch (error) {
+                console.error(error);
+                showToast('AI 分析失敗，請稍後再試', true);
+                els.aiLoading.classList.add('hidden');
+                els.aiEmpty.classList.remove('hidden');
+            } finally {
+                els.summarizeBtn.disabled = false;
+            }
+        }
+
+        function renderAIResult(data) {
+            // Hide Loading
+            els.aiLoading.classList.add('hidden');
+            els.aiContent.classList.remove('hidden');
+            
+            // 1. Tags
+            els.aiTags.innerHTML = data.tags.map(tag => 
+                `<span class="px-3 py-1 rounded-full bg-white border border-brand-100 text-brand-600 text-xs font-bold shadow-sm">#${tag}</span>`
+            ).join('');
+
+            // 2. Summary
+            els.aiSummary.textContent = data.summary;
+
+            // 3. Action Items
+            els.aiActionItems.innerHTML = data.action_items.map(item => `
+                <li class="flex items-start gap-2 text-gray-700 text-sm">
+                    <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-accent-500 flex-shrink-0"></div>
+                    <span>${item}</span>
+                </li>
+            `).join('');
+            
+            // Show badge
+            els.aiBadge.classList.remove('hidden');
+            showToast('AI 分析完成！');
+        }
+
+        // --- Theme & View Logic ---
+
+        function setTheme(h, s) {
+            document.documentElement.style.setProperty('--brand-h', h);
+            document.documentElement.style.setProperty('--brand-s', s);
+            
+            // 更新背景光暈顏色 (簡單的視覺反饋)
+            const blob1 = document.getElementById('bgBlob1');
+            blob1.classList.remove('bg-brand-300', 'bg-blue-300', 'bg-purple-300', 'bg-rose-300', 'bg-orange-300');
+            // 這裡使用 inline style 比較直接
+            blob1.style.backgroundColor = `hsl(${h}, ${s}, 80%)`;
+        }
+
+        function setCustomTheme(hex) {
+            // Convert Hex to HSL
+            let c = hex.substring(1);
+            let rgb = parseInt(c, 16);
+            let r = (rgb >> 16) & 0xff;
+            let g = (rgb >>  8) & 0xff;
+            let b = (rgb >>  0) & 0xff;
+            
+            r /= 255, g /= 255, b /= 255;
+            let max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max == min) {
+                h = s = 0; // achromatic
+            } else {
+                let d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            
+            setTheme(Math.round(h * 360), Math.round(s * 100) + '%');
+        }
+
+        function toggleViewMode() {
+            if(currentViewMode === 'desktop') {
+                currentViewMode = 'mobile';
+                els.appContainer.classList.add('mobile-mode');
+                els.viewIconDesktop.classList.add('hidden');
+                els.viewIconMobile.classList.remove('hidden');
+                els.viewModeText.textContent = '切換電腦版';
+            } else {
+                currentViewMode = 'desktop';
+                els.appContainer.classList.remove('mobile-mode');
+                els.viewIconDesktop.classList.remove('hidden');
+                els.viewIconMobile.classList.add('hidden');
+                els.viewModeText.textContent = '切換手機版';
+            }
+        }
+
+        // --- UI Helper Functions ---
+
+        function switchToTab(tab) {
+            if (tab === 'transcript') {
+                els.tabTranscript.className = 'px-5 py-2 rounded-lg text-sm font-bold text-gray-800 bg-white shadow-sm transition-all duration-300';
+                els.tabAnalysis.className = 'px-5 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-700 transition-all duration-300 relative';
+                
+                els.viewTranscript.classList.remove('opacity-0', 'translate-x-10', 'pointer-events-none');
+                els.viewAnalysis.classList.add('opacity-0', 'translate-x-10', 'pointer-events-none');
+            } else {
+                els.tabAnalysis.className = 'px-5 py-2 rounded-lg text-sm font-bold text-brand-700 bg-white shadow-sm transition-all duration-300 relative';
+                els.tabTranscript.className = 'px-5 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-700 transition-all duration-300';
+                
+                els.viewAnalysis.classList.remove('opacity-0', 'translate-x-10', 'pointer-events-none');
+                els.viewTranscript.classList.add('opacity-0', 'translate-x-10', 'pointer-events-none');
+                
+                els.aiBadge.classList.add('hidden'); // Clear badge on view
+            }
+        }
+
+        function showToast(msg, isError = false) {
+            els.toastMsg.textContent = msg;
+            els.toast.classList.remove('translate-x-full', 'opacity-0');
+            
+            // Error style
+            if(isError) {
+                els.toast.querySelector('svg').classList.replace('text-green-400', 'text-red-400');
+            } else {
+                els.toast.querySelector('svg').classList.replace('text-red-400', 'text-green-400');
+            }
+
+            setTimeout(() => {
+                els.toast.classList.add('translate-x-full', 'opacity-0');
+            }, 3000);
+        }
+
+        function copyText() {
+            if(!els.transcriptArea.value) return;
+            navigator.clipboard.writeText(els.transcriptArea.value);
+            showToast('逐字稿已複製');
+        }
+
+        function downloadTxt() {
+            if(!els.transcriptArea.value) return;
+            const blob = new Blob([els.transcriptArea.value], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `voice-note-${new Date().toISOString().slice(0,10)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('檔案已下載');
+        }
+
+        // --- Event Listeners ---
+        els.recordBtn.addEventListener('click', () => isRecording ? stopRecording() : startRecording());
+        els.clearBtn.addEventListener('click', () => {
+            if(confirm('確定清除所有內容？')) {
+                els.transcriptArea.value = '';
+                finalTranscript = '';
+                els.timer.textContent = '00:00';
+                els.aiLoading.classList.add('hidden');
+                els.aiContent.classList.add('hidden');
+                els.aiEmpty.classList.remove('hidden');
+                els.summarizeBtn.disabled = true;
+                stopRecording();
+                showToast('已清除');
+            }
+        });
+        els.summarizeBtn.addEventListener('click', summarize);
+        els.tabTranscript.addEventListener('click', () => switchToTab('transcript'));
+        els.tabAnalysis.addEventListener('click', () => switchToTab('analysis'));
+
+    </script>
+</body>
+</html>
