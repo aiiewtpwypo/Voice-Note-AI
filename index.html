@@ -376,13 +376,26 @@
 
         /* Widget Styles */
         .widget-pomodoro { background: linear-gradient(145deg, #FFFFFF 0%, #FFF5ED 100%); justify-content: center; align-items: center; text-align: center; }
-        .timer-wrapper { display: flex; align-items: center; justify-content: center; margin: auto 0; font-family: 'Nunito', sans-serif; height: var(--digit-height); transform: scale(0.9); cursor: ns-resize; user-select: none; }
-        /* Grouped minutes for easier dragging */
-        .digit-group-minutes { display: flex; position: relative; height: var(--digit-height); overflow: hidden; }
+        
+        /* Update Timer Wrapper for full group dragging */
+        .timer-wrapper { 
+            display: flex; align-items: center; justify-content: center; 
+            margin: auto 0; font-family: 'Nunito', sans-serif; 
+            height: var(--digit-height); transform: scale(0.9); 
+            cursor: ns-resize; user-select: none; 
+        }
+        
+        /* Group styling */
+        .digit-group-minutes, .digit-group-seconds { 
+            display: flex; position: relative; height: var(--digit-height); overflow: hidden; 
+            transition: transform 0.1s;
+        }
+        .digit-group-minutes:active, .digit-group-seconds:active { transform: scale(1.05); }
+        
         .digit-group { display: block; position: relative; font-size: 5rem; font-weight: 800; line-height: var(--digit-height); color: var(--primary-dark); overflow: hidden; height: var(--digit-height); width: 0.7em; }
         .digit-wrapper { display: block; position: absolute; top: 0; left: 0; width: 100%; transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .digit { height: var(--digit-height); line-height: var(--digit-height); display: flex; align-items: center; justify-content: center; }
-        .colon { font-size: 3.5rem; margin: 0 5px; color: var(--accent-color); line-height: var(--digit-height); height: var(--digit-height); display: flex; align-items: center; padding-bottom: 10px; animation: blink 1s infinite; }
+        .colon { font-size: 3.5rem; margin: 0 5px; color: var(--accent-color); line-height: var(--digit-height); height: var(--digit-height); display: flex; align-items: center; padding-bottom: 10px; animation: blink 1s infinite; cursor: default;}
         @keyframes blink { 50% { opacity: 0.5; } }
         .timer-status { font-size: 1rem; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
         .timer-controls { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; justify-content: center; }
@@ -548,9 +561,11 @@
                      <div class="digit-group" id="min-ones"><div class="digit-wrapper"></div></div>
                 </div>
                 <div class="colon">:</div>
-                <!-- 秒數：保持靜態或僅顯示，不做拖曳以簡化 -->
-                <div class="digit-group" id="sec-tens"><div class="digit-wrapper"></div></div>
-                <div class="digit-group" id="sec-ones"><div class="digit-wrapper"></div></div>
+                <!-- 秒數：也合併為一個拖曳區塊 -->
+                <div class="digit-group-seconds" id="seconds-group" title="拖曳上下調整秒數">
+                    <div class="digit-group" id="sec-tens"><div class="digit-wrapper"></div></div>
+                    <div class="digit-group" id="sec-ones"><div class="digit-wrapper"></div></div>
+                </div>
             </div>
             <div class="timer-controls">
                 <button class="btn-pill" id="mainBtn" onclick="toggleTimer()"><span>▶ 開始</span></button>
@@ -646,7 +661,7 @@
             <div class="widget-header">
                 <div class="widget-title text-white"><div class="drag-icon" style="color:rgba(255,255,255,0.5)">⋮⋮</div> 🎧 Lo-fi Station</div>
                 <div class="music-controls">
-                    <button class="music-btn" onclick="askCustomMusic()" title="自訂連結">🔗</button>
+                    <button class="music-btn" onclick="askSearchMusic()" title="搜尋音樂">🔍</button>
                 </div>
             </div>
             <div class="music-container">
@@ -801,11 +816,43 @@
             ]
         };
 
-        // Music Channel Logic
-        function extractVideoID(url) {
-            const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[7].length == 11) ? match[7] : false;
+        // Music Search Logic with Gemini
+        function askSearchMusic() {
+            openInputModal('搜尋音樂', '想聽什麼？ (例如: 周杰倫, Lofi Girl)', async (query) => {
+                if(!query.trim()) return;
+                await searchMusicWithAI(query);
+            });
+        }
+
+        async function searchMusicWithAI(query) {
+            try {
+                showToast('正在搜尋音樂...', 'success');
+                let key = apiKey || localStorage.getItem('gemini_api_key');
+                if(!key) { key = prompt("請輸入 Gemini API Key:"); if(key) localStorage.setItem('gemini_api_key', key); else throw new Error("無 API Key"); }
+                
+                const prompt = `You are a music assistant. The user wants to listen to: '${query}'. Please provide a valid YouTube Video ID for a video that matches this request. Return ONLY the Video ID string (e.g., jfKfPfyJRdk). Do not write anything else.`;
+
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                if(!res.ok) throw new Error('API Error');
+                const data = await res.json();
+                const videoId = data.candidates[0].content.parts[0].text.trim();
+                
+                // Basic validation for ID length
+                if (videoId.length > 0 && videoId.length < 20) {
+                    document.getElementById('musicFrame').src = `https://www.youtube.com/embed/${videoId}?controls=1&autoplay=1`;
+                    showToast(`已播放: ${query}`, 'success');
+                } else {
+                     showToast('找不到相關音樂', 'error');
+                }
+
+            } catch(e) {
+                console.error(e);
+                showToast('搜尋失敗: ' + e.message, 'error');
+            }
         }
 
         // Generic Input Modal Logic
@@ -831,20 +878,6 @@
         document.getElementById('customInputValue').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') submitInput();
         });
-
-        function askCustomMusic() {
-            openInputModal('自訂音樂連結', '貼上 YouTube 網址或 ID', (val) => {
-                if(!val) return;
-                const id = extractVideoID(val) || val; // Try to extract ID, else assume it IS an ID
-                if(id && id.length === 11) {
-                    document.getElementById('musicFrame').src = `https://www.youtube.com/embed/${id}?controls=0&autoplay=1`;
-                    showToast('已播放自訂音樂', 'success');
-                } else {
-                    showToast('無效的 YouTube 連結', 'error');
-                }
-            });
-        }
-
 
         // Focus Input Logic
         const focusInput = document.getElementById('focusInput');
@@ -1052,22 +1085,25 @@
         let timerInterval; let timeLeft = 25 * 60; let isRunning = false; let currentModeTime = 25 * 60;
         let currentMode = 'focus'; 
 
-        // Setup Time Drag (Vertical Slide for Minutes)
-        function setupTimeDrag() {
-            const minutesGroup = document.getElementById('minutes-group');
+        // Setup Time Drag (Grouped dragging)
+        function setupTimerDrag(elementId, type) {
+            const element = document.getElementById(elementId);
             let startY = 0;
-            let initialMinutes = 0;
+            let initialValue = 0;
 
-            minutesGroup.addEventListener('mousedown', startDrag);
-            minutesGroup.addEventListener('touchstart', startDrag, {passive: false});
+            element.addEventListener('mousedown', startDrag);
+            element.addEventListener('touchstart', startDrag, {passive: false});
 
             function startDrag(e) {
                 if(isRunning) return;
                 e.preventDefault();
                 startY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
                 
-                // Calculate current minutes from stored timeLeft
-                initialMinutes = Math.floor(timeLeft / 60);
+                if (type === 'minutes') {
+                    initialValue = Math.floor(timeLeft / 60);
+                } else {
+                    initialValue = timeLeft % 60;
+                }
                 
                 document.addEventListener('mousemove', onDrag);
                 document.addEventListener('touchmove', onDrag, {passive: false});
@@ -1078,15 +1114,18 @@
             function onDrag(e) {
                 e.preventDefault();
                 const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-                const deltaY = startY - clientY; // Drag up to increase
+                const deltaY = startY - clientY; 
                 
-                // Sensitivity: 10px = 1 min
-                const change = Math.round(deltaY / 10);
-                let newMinutes = initialMinutes + change;
-                newMinutes = Math.max(1, Math.min(99, newMinutes)); // Limit 1-99 mins
-
-                // Update Display immediately
-                updateTimeManually(newMinutes);
+                const change = Math.round(deltaY / 10); // Sensitivity
+                let newValue = initialValue + change;
+                
+                if (type === 'minutes') {
+                    newValue = Math.max(0, Math.min(99, newValue));
+                    updateTimeManually(newValue, timeLeft % 60);
+                } else {
+                    newValue = Math.max(0, Math.min(59, newValue));
+                    updateTimeManually(Math.floor(timeLeft / 60), newValue);
+                }
             }
 
             function endDrag(e) {
@@ -1095,9 +1134,8 @@
                 document.removeEventListener('mouseup', endDrag);
                 document.removeEventListener('touchend', endDrag);
                 
-                // Finalize
                 currentModeTime = timeLeft;
-                // Reset mode button to 'Focus' look if custom time
+                // If dragging minutes/seconds, treat as custom mode
                 const btn = document.getElementById('modeBtn');
                 btn.innerText = '🎯'; 
                 btn.title = "專注模式";
@@ -1106,8 +1144,8 @@
             }
         }
 
-        function updateTimeManually(minutes) {
-            timeLeft = minutes * 60;
+        function updateTimeManually(minutes, seconds) {
+            timeLeft = minutes * 60 + seconds;
             updateTimerDisplay();
         }
 
@@ -1128,7 +1166,8 @@
         initDigit('sec-tens', 0);
         initDigit('sec-ones', 0);
         
-        setupTimeDrag(); // Enable drag interaction
+        setupTimerDrag('minutes-group', 'minutes'); 
+        setupTimerDrag('seconds-group', 'seconds');
 
         function toggleTimer() { isRunning ? pauseTimer() : startTimer(); }
         function startTimer() {
