@@ -86,9 +86,25 @@
             font-weight: 500;
         }
 
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
         .clock-display { text-align: right; }
-        .time-now { font-size: 1.5rem; font-weight: 800; color: var(--primary-dark); font-variant-numeric: tabular-nums; }
+        .time-now { font-size: 1.5rem; font-weight: 800; color: var(--primary-dark); font-variant-numeric: tabular-nums; line-height: 1.2; }
         .date-now { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+
+        /* 設定按鈕 */
+        .btn-settings {
+            width: 44px; height: 44px; border-radius: 12px; border: none;
+            background: white; color: var(--text-muted); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: all 0.2s;
+            font-size: 1.2rem;
+        }
+        .btn-settings:hover { transform: rotate(90deg); color: var(--primary-dark); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
 
         /* 通用卡片樣式 */
         .widget {
@@ -96,7 +112,7 @@
             border-radius: var(--radius-lg);
             padding: 24px;
             box-shadow: var(--shadow-soft);
-            transition: box-shadow 0.2s ease, transform 0.1s;
+            transition: box-shadow 0.2s ease, transform 0.1s, grid-column 0.3s ease, grid-row 0.3s ease; /* 增加 Grid 過渡動畫 */
             display: flex;
             flex-direction: column;
             border: 1px solid rgba(255,255,255,0.6);
@@ -112,10 +128,9 @@
         }
 
         .widget.dragging { opacity: 0.3; border: 2px dashed var(--primary-color); box-shadow: none; z-index: 20; }
-        /* 調整時，原始卡片淡化 */
         .widget.resizing-source { opacity: 0.4; filter: grayscale(0.5); }
 
-        /* 幽靈卡片 (調整大小時顯示的預覽框) */
+        /* 幽靈卡片 */
         .ghost-widget {
             position: absolute;
             background: rgba(197, 157, 127, 0.1);
@@ -131,11 +146,10 @@
             font-size: 1.5rem;
             backdrop-filter: blur(2px);
             box-sizing: border-box;
-            /* 平滑過渡效果，讓吸附感更強 */
             transition: width 0.1s ease-out, height 0.1s ease-out; 
         }
 
-        /* 調整手柄樣式 */
+        /* 調整手柄 */
         .resize-handle {
             position: absolute;
             bottom: 0;
@@ -144,13 +158,11 @@
             height: 30px;
             cursor: nwse-resize;
             z-index: 30;
-            /* 使用圖示或形狀暗示可拖曳 */
             background: linear-gradient(135deg, transparent 50%, var(--primary-color) 50%);
             opacity: 0;
             transition: opacity 0.2s, transform 0.2s;
             border-bottom-right-radius: var(--radius-lg);
         }
-        
         .widget:hover .resize-handle { opacity: 0.7; }
         .resize-handle:hover { opacity: 1; transform: scale(1.1); }
 
@@ -167,6 +179,37 @@
 
         .drag-icon { color: var(--text-muted); opacity: 0.5; font-size: 1.2rem; }
 
+        /* --- Settings Modal --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); backdrop-filter: blur(5px);
+            z-index: 1000; display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        
+        .modal-content {
+            background: #FFF; width: 90%; max-width: 600px;
+            border-radius: 24px; padding: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            transform: translateY(20px); transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { font-size: 1.5rem; color: var(--primary-dark); font-weight: 800; }
+        .btn-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
+        
+        .templates-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; }
+        .template-card {
+            border: 2px solid #F0EAE6; border-radius: 16px; padding: 15px; cursor: pointer;
+            transition: all 0.2s; text-align: center; background: #FAFAFA;
+        }
+        .template-card:hover { border-color: var(--primary-color); background: #FFF; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .template-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
+        .template-name { font-weight: 700; color: var(--text-main); font-size: 0.95rem; }
+        .template-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 5px; }
+
         /* --- 手機版 RWD (鎖定佈局) --- */
         @media (max-width: 768px) {
             .dashboard-container { display: flex; flex-direction: column; gap: 20px; }
@@ -176,138 +219,64 @@
             }
             .resize-handle { display: none; }
             header { height: auto; margin-bottom: 10px; }
+            .header-right { flex-direction: column-reverse; gap: 10px; align-items: flex-end; }
         }
 
-        /* --- Widget 1: 番茄鐘 --- */
-        .widget-pomodoro {
-            background: linear-gradient(145deg, #FFFFFF 0%, #FFF5ED 100%);
-            justify-content: center; align-items: center; text-align: center;
-        }
-        .timer-wrapper {
-            display: flex; align-items: center; justify-content: center; margin: auto 0;
-            font-family: 'Nunito', sans-serif; height: var(--digit-height); transform: scale(0.9);
-        }
-        .digit-group {
-            display: block; position: relative; font-size: 5rem; font-weight: 800;
-            line-height: var(--digit-height); color: var(--primary-dark); overflow: hidden;
-            height: var(--digit-height); width: 0.7em;
-        }
-        .digit-wrapper {
-            display: block; position: absolute; top: 0; left: 0; width: 100%;
-            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
+        /* --- Widget Styles (Same as before) --- */
+        .widget-pomodoro { background: linear-gradient(145deg, #FFFFFF 0%, #FFF5ED 100%); justify-content: center; align-items: center; text-align: center; }
+        .timer-wrapper { display: flex; align-items: center; justify-content: center; margin: auto 0; font-family: 'Nunito', sans-serif; height: var(--digit-height); transform: scale(0.9); }
+        .digit-group { display: block; position: relative; font-size: 5rem; font-weight: 800; line-height: var(--digit-height); color: var(--primary-dark); overflow: hidden; height: var(--digit-height); width: 0.7em; }
+        .digit-wrapper { display: block; position: absolute; top: 0; left: 0; width: 100%; transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .digit { height: var(--digit-height); line-height: var(--digit-height); display: flex; align-items: center; justify-content: center; }
-        .colon {
-            font-size: 3.5rem; margin: 0 5px; color: var(--accent-color);
-            line-height: var(--digit-height); height: var(--digit-height);
-            display: flex; align-items: center; padding-bottom: 10px; animation: blink 1s infinite;
-        }
+        .colon { font-size: 3.5rem; margin: 0 5px; color: var(--accent-color); line-height: var(--digit-height); height: var(--digit-height); display: flex; align-items: center; padding-bottom: 10px; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0.5; } }
-        .timer-status {
-            font-size: 1rem; font-weight: 700; color: var(--text-muted);
-            margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px;
-        }
+        .timer-status { font-size: 1rem; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
         .timer-controls { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; justify-content: center; }
-        .btn-circle {
-            width: 48px; height: 48px; border-radius: 50%; border: none;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem; transition: all 0.2s; background: var(--bg-color); color: var(--text-muted);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-        }
+        .btn-circle { width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: all 0.2s; background: var(--bg-color); color: var(--text-muted); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
         .btn-circle:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.08); color: var(--primary-dark); }
-        .btn-pill {
-            height: 48px; padding: 0 24px; border-radius: 24px; background: var(--primary-color);
-            color: white; font-size: 1rem; font-weight: 700; gap: 8px; border: none;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-            transition: all 0.2s; box-shadow: 0 4px 15px rgba(197, 157, 127, 0.3);
-        }
+        .btn-pill { height: 48px; padding: 0 24px; border-radius: 24px; background: var(--primary-color); color: white; font-size: 1rem; font-weight: 700; gap: 8px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(197, 157, 127, 0.3); }
         .btn-pill:hover { background: var(--primary-dark); transform: translateY(-2px); }
 
-        /* --- Widget 2 & 3: 待辦與記帳 --- */
         .input-area { display: flex; gap: 10px; margin-bottom: 15px; flex-shrink: 0; }
-        input, textarea {
-            flex: 1; padding: 12px 16px; border-radius: var(--radius-sm); border: 2px solid transparent;
-            background: #F4F1EE; font-size: 0.95rem; color: var(--text-main); transition: all 0.3s; min-width: 0;
-        }
+        input, textarea { flex: 1; padding: 12px 16px; border-radius: var(--radius-sm); border: 2px solid transparent; background: #F4F1EE; font-size: 0.95rem; color: var(--text-main); transition: all 0.3s; min-width: 0; }
         input:focus, textarea:focus { outline: none; background: #FFF; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(197, 157, 127, 0.1); }
-        .btn-icon {
-            width: 44px; height: 44px; border-radius: 14px; border: none; background: var(--primary-color);
-            color: white; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: 0.2s; flex-shrink: 0;
-        }
+        .btn-icon { width: 44px; height: 44px; border-radius: 14px; border: none; background: var(--primary-color); color: white; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0; }
         .btn-icon:hover { background: var(--primary-dark); }
         .todo-list-container, .expense-list-container { flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0; }
-        .todo-item {
-            display: flex; align-items: center; background: #FAFAFA; padding: 10px 14px;
-            margin-bottom: 8px; border-radius: 12px; border-left: 4px solid var(--primary-color); transition: all 0.2s;
-        }
+        .todo-item { display: flex; align-items: center; background: #FAFAFA; padding: 10px 14px; margin-bottom: 8px; border-radius: 12px; border-left: 4px solid var(--primary-color); transition: all 0.2s; }
         .todo-item:hover { background: #FFF; }
         .todo-item.completed { opacity: 0.6; border-left-color: var(--success-color); background: #F7F7F7; }
         .todo-item.completed span { text-decoration: line-through; color: var(--text-muted); }
-        .checkbox-custom {
-            width: 20px; height: 20px; border: 2px solid var(--primary-color); border-radius: 5px;
-            margin-right: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-        }
+        .checkbox-custom { width: 20px; height: 20px; border: 2px solid var(--primary-color); border-radius: 5px; margin-right: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .checkbox-custom.checked { background: var(--primary-color); }
         .checkbox-custom.checked::after { content: '✓'; color: white; font-size: 12px; font-weight: bold; }
-        .balance-card {
-            background: var(--primary-color); color: white; padding: 20px; border-radius: var(--radius-sm);
-            margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end;
-            background-image: linear-gradient(135deg, var(--primary-color) 0%, #D4A373 100%); flex-shrink: 0;
-        }
+        .balance-card { background: var(--primary-color); color: white; padding: 20px; border-radius: var(--radius-sm); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end; background-image: linear-gradient(135deg, var(--primary-color) 0%, #D4A373 100%); flex-shrink: 0; }
         .balance-label { font-size: 0.85rem; opacity: 0.9; margin-bottom: 4px; font-weight: 600; }
         .balance-amount { font-size: 1.8rem; font-weight: 800; line-height: 1; }
-        .expense-item {
-            display: flex; justify-content: space-between; padding: 10px 0;
-            border-bottom: 1px dashed #E0E0E0; font-size: 0.95rem; align-items: center;
-        }
+        .expense-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #E0E0E0; font-size: 0.95rem; align-items: center; }
         .expense-price { font-weight: 700; color: var(--danger-color); }
-        .btn-text-danger {
-            background: none; border: none; color: #CCC; cursor: pointer;
-            font-size: 1.2rem; margin-left: 8px; padding: 0 4px;
-        }
+        .btn-text-danger { background: none; border: none; color: #CCC; cursor: pointer; font-size: 1.2rem; margin-left: 8px; padding: 0 4px; }
         .btn-text-danger:hover { color: var(--danger-color); }
-        .empty-placeholder { 
-            text-align: center; color: var(--text-muted); display: flex; align-items: center;
-            justify-content: center; height: 100%; font-size: 0.9rem; 
-        }
+        .empty-placeholder { text-align: center; color: var(--text-muted); display: flex; align-items: center; justify-content: center; height: 100%; font-size: 0.9rem; }
         
-        /* --- Widget 4: AI Voice Note --- */
         .widget-voice { display: flex; flex-direction: column; }
         .voice-layout { display: flex; gap: 20px; flex: 1; overflow: hidden; background: #FFFFFF; min-height: 0; }
-        .voice-controls {
-            width: 220px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-between;
-            background: linear-gradient(to bottom, #FFFCF9, #F7F5F2); border-radius: var(--radius-sm);
-            padding: 20px; border: 1px solid #F0F0F0;
-        }
+        .voice-controls { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(to bottom, #FFFCF9, #F7F5F2); border-radius: var(--radius-sm); padding: 20px; border: 1px solid #F0F0F0; }
         .visualizer { display: flex; gap: 4px; height: 40px; margin-bottom: 10px; justify-content: center; align-items: center; }
         .wave-bar { width: 5px; height: 5px; background-color: #E0E0E0; border-radius: 99px; transition: all 0.15s; }
         .recording-active .wave-bar { background-color: var(--danger-color); }
         .voice-timer { font-size: 2rem; font-weight: 300; color: var(--text-main); text-align: center; margin-bottom: 5px; }
         .voice-status { font-size: 0.75rem; text-align: center; color: var(--text-muted); font-weight: 700; margin-bottom: 15px;}
-        .btn-record-large {
-            width: 100%; padding: 12px; border-radius: 16px; background: var(--text-main); color: white;
-            border: none; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: flex;
-            align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; transition: all 0.2s;
-        }
+        .btn-record-large { width: 100%; padding: 12px; border-radius: 16px; background: var(--text-main); color: white; border: none; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; transition: all 0.2s; }
         .btn-record-large:hover { background: #332b26; }
         .btn-record-large.recording { background: var(--danger-color); animation: pulse 2s infinite; }
         .voice-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .btn-sub {
-            padding: 10px; border-radius: 10px; background: white; border: 1px solid #E5E5E5;
-            color: var(--text-muted); cursor: pointer; font-size: 0.85rem; font-weight: 600;
-        }
+        .btn-sub { padding: 10px; border-radius: 10px; background: white; border: 1px solid #E5E5E5; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; font-weight: 600; }
         .btn-sub:hover { border-color: var(--primary-color); color: var(--primary-dark); }
         .btn-ai-magic:disabled { opacity: 0.5; }
-        .voice-content-panel {
-            flex: 1; display: flex; flex-direction: column; background: #FFF;
-            border-radius: var(--radius-sm); border: 1px solid #F0F0F0; overflow: hidden; position: relative;
-        }
+        .voice-content-panel { flex: 1; display: flex; flex-direction: column; background: #FFF; border-radius: var(--radius-sm); border: 1px solid #F0F0F0; overflow: hidden; position: relative; }
         .voice-tabs { display: flex; padding: 5px; margin: 10px; background: #F4F1EE; border-radius: 10px; flex-shrink: 0; }
-        .voice-tab {
-            flex: 1; text-align: center; padding: 6px; font-size: 0.85rem; font-weight: 700;
-            color: var(--text-muted); cursor: pointer; border-radius: 8px; border: none; background: transparent;
-        }
+        .voice-tab { flex: 1; text-align: center; padding: 6px; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); cursor: pointer; border-radius: 8px; border: none; background: transparent; }
         .voice-tab.active { background: white; color: var(--primary-dark); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .voice-textarea { flex: 1; width: 100%; border: none; resize: none; padding: 0 20px 20px 20px; font-size: 1rem; line-height: 1.6; background: transparent; outline: none; }
         .ai-results { padding: 0 20px 20px 20px; overflow-y: auto; height: 100%; }
@@ -321,12 +290,7 @@
             .visualizer { display: none; }
         }
         #toastContainer { position: fixed; top: 24px; right: 24px; z-index: 100; pointer-events: none; }
-        .toast {
-            background: white; padding: 12px 20px; border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-left: 5px solid; margin-bottom: 10px;
-            font-size: 0.9rem; font-weight: 700; color: var(--text-main);
-            animation: slideIn 0.3s; pointer-events: auto; display: flex; align-items: center; gap: 10px;
-        }
+        .toast { background: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-left: 5px solid; margin-bottom: 10px; font-size: 0.9rem; font-weight: 700; color: var(--text-main); animation: slideIn 0.3s; pointer-events: auto; display: flex; align-items: center; gap: 10px; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #DBC8B6; border-radius: 10px; }
@@ -341,13 +305,16 @@
                 <h1>Student Dashboard</h1>
                 <div class="subtitle">Design Your Perfect Workflow.</div>
             </div>
-            <div class="clock-display">
-                <div class="time-now" id="clockTime">00:00</div>
-                <div class="date-now" id="clockDate">Loading...</div>
+            <div class="header-right">
+                <div class="clock-display">
+                    <div class="time-now" id="clockTime">00:00</div>
+                    <div class="date-now" id="clockDate">Loading...</div>
+                </div>
+                <button class="btn-settings" onclick="openSettings()" title="佈局設定">⚙️</button>
             </div>
         </header>
 
-        <!-- Widget 1: 番茄鐘 (Span: 5 cols, 5 rows * 60px) -->
+        <!-- Widget 1: 番茄鐘 (Span: 5 cols, 5 rows) -->
         <div class="widget widget-pomodoro" draggable="true" data-id="pomodoro" style="grid-column: span 5; grid-row: span 5;">
             <div class="resize-handle" title="拖曳調整大小"></div>
             <div class="widget-header">
@@ -369,7 +336,7 @@
             </div>
         </div>
 
-        <!-- Widget 2: 待辦事項 (Span: 7 cols, 7 rows * 60px) -->
+        <!-- Widget 2: 待辦事項 (Span: 7 cols, 7 rows) -->
         <div class="widget widget-todo" draggable="true" data-id="todo" style="grid-column: span 7; grid-row: span 7;">
             <div class="resize-handle"></div>
             <div class="widget-header">
@@ -383,7 +350,7 @@
             <div class="todo-list-container" id="todoList"></div>
         </div>
 
-        <!-- Widget 3: 記帳 (Span: 5 cols, 6 rows * 60px) -->
+        <!-- Widget 3: 記帳 (Span: 5 cols, 6 rows) -->
         <div class="widget widget-expense" draggable="true" data-id="expense" style="grid-column: span 5; grid-row: span 6;">
             <div class="resize-handle"></div>
             <div class="widget-header">
@@ -401,7 +368,7 @@
             <div class="expense-list-container" id="expenseList"></div>
         </div>
 
-        <!-- Widget 4: AI Voice Note (Span: 12 cols, 8 rows * 60px) -->
+        <!-- Widget 4: AI Voice Note (Span: 12 cols, 8 rows) -->
         <div class="widget widget-voice" draggable="true" data-id="voice" style="grid-column: span 12; grid-row: span 8;">
             <div class="resize-handle"></div>
             <div class="widget-header">
@@ -450,6 +417,34 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>版面風格設定</h2>
+                <button class="btn-close" onclick="closeSettings()">×</button>
+            </div>
+            <p style="color:var(--text-muted); margin-bottom:20px;">選擇一個預設模板來快速整理您的桌面，或者繼續手動拖曳調整。</p>
+            <div class="templates-grid">
+                <div class="template-card" onclick="applyTemplate('classic')">
+                    <span class="template-icon">🍱</span>
+                    <div class="template-name">經典儀表板</div>
+                    <div class="template-desc">平衡的標準配置</div>
+                </div>
+                <div class="template-card" onclick="applyTemplate('focus')">
+                    <span class="template-icon">🎯</span>
+                    <div class="template-name">專注模式</div>
+                    <div class="template-desc">番茄鐘優先</div>
+                </div>
+                <div class="template-card" onclick="applyTemplate('planner')">
+                    <span class="template-icon">📝</span>
+                    <div class="template-name">規劃大師</div>
+                    <div class="template-desc">待辦清單最大化</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="toastContainer"></div>
 
     <script>
@@ -465,6 +460,53 @@
 
         const container = document.getElementById('dashboardGrid');
         let draggedItem = null;
+
+        // Templates Definition
+        const templates = {
+            classic: [
+                { id: 'pomodoro', col: 5, row: 5 },
+                { id: 'todo', col: 7, row: 7 },
+                { id: 'expense', col: 5, row: 6 },
+                { id: 'voice', col: 12, row: 8 }
+            ],
+            focus: [
+                { id: 'pomodoro', col: 8, row: 8 },
+                { id: 'todo', col: 4, row: 14 },
+                { id: 'voice', col: 8, row: 6 },
+                { id: 'expense', col: 12, row: 4 }
+            ],
+            planner: [
+                { id: 'todo', col: 12, row: 8 },
+                { id: 'pomodoro', col: 6, row: 6 },
+                { id: 'voice', col: 6, row: 6 },
+                { id: 'expense', col: 12, row: 4 }
+            ]
+        };
+
+        // Settings Modal Logic
+        function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
+        function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
+        document.getElementById('settingsModal').addEventListener('click', (e) => {
+            if(e.target === document.getElementById('settingsModal')) closeSettings();
+        });
+
+        function applyTemplate(name) {
+            const layout = templates[name];
+            if(!layout) return;
+            
+            layout.forEach(conf => {
+                const widget = document.querySelector(`.widget[data-id="${conf.id}"]`);
+                if(widget) {
+                    widget.style.gridColumn = `span ${conf.col}`;
+                    widget.style.gridRow = `span ${conf.row}`;
+                    // Move to end to reset flow order mostly
+                    container.appendChild(widget);
+                }
+            });
+            saveLayout();
+            closeSettings();
+            showToast(`已套用「${name==='classic'?'經典':name==='focus'?'專注':'規劃'}」模板`, 'success');
+        }
 
         // Load saved layout
         function loadLayout() {
