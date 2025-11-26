@@ -25,9 +25,9 @@
             --shadow-hover: 0 20px 50px -12px rgba(197, 157, 127, 0.25);
             --digit-height: 80px;
             
-            /* Grid 設定 */
-            --grid-gap: 24px;
-            --grid-row-height: 60px; /* 基礎高度單元 */
+            /* Grid 設定：更精細的單元格 */
+            --grid-gap: 20px;
+            --grid-row-height: 20px; /* 降低高度以允許更自由的調整 */
         }
 
         * {
@@ -50,21 +50,21 @@
 
         /* --- 佈局系統 (Bento Grid) --- */
         .dashboard-container {
-            max-width: 1200px; /* 加寬容器以適應自由佈局 */
+            max-width: 1200px;
             margin: 0 auto;
             display: grid;
             grid-template-columns: repeat(12, 1fr);
-            grid-auto-rows: var(--grid-row-height); /* 關鍵：固定行高以允許跨行 */
+            grid-auto-rows: var(--grid-row-height);
             gap: var(--grid-gap);
             padding-bottom: 40px;
             position: relative; 
-            grid-auto-flow: dense; /* 讓卡片自動填補空隙 */
+            grid-auto-flow: dense;
         }
 
         /* 標題區 */
         header {
             grid-column: span 12;
-            grid-row: span 2; /* 標題佔據 2 行 */
+            grid-row: span 4;
             padding: 10px 0;
             display: flex;
             align-items: center;
@@ -85,22 +85,9 @@
             font-weight: 500;
         }
 
-        .clock-display {
-            text-align: right;
-        }
-
-        .time-now {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--primary-dark);
-            font-variant-numeric: tabular-nums;
-        }
-
-        .date-now {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
+        .clock-display { text-align: right; }
+        .time-now { font-size: 1.5rem; font-weight: 800; color: var(--primary-dark); font-variant-numeric: tabular-nums; }
+        .date-now { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
 
         /* 通用卡片樣式 */
         .widget {
@@ -114,27 +101,34 @@
             border: 1px solid rgba(255,255,255,0.6);
             position: relative;
             overflow: hidden;
-            min-height: 100%; /* 確保填滿 Grid 區域 */
+            min-height: 100%;
         }
 
         .widget:hover {
             box-shadow: var(--shadow-hover);
             border-color: rgba(255,255,255,0.9);
-            z-index: 10; /* 懸停時浮起 */
+            z-index: 10;
         }
 
-        .widget.dragging {
-            opacity: 0.5;
-            border: 2px dashed var(--primary-color);
-            box-shadow: none;
-            z-index: 20;
-        }
-        
-        .widget.resizing {
-            z-index: 20;
-            box-shadow: var(--shadow-hover);
-            opacity: 0.9;
-            transition: none; /* 調整大小時取消過渡動畫以保持流暢 */
+        .widget.dragging { opacity: 0.3; border: 2px dashed var(--primary-color); box-shadow: none; z-index: 20; }
+        .widget.resizing-source { opacity: 0.3; } /* 調整時原始卡片的樣式 */
+
+        /* 幽靈卡片 (調整大小時顯示) */
+        .ghost-widget {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--primary-color);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            z-index: 100;
+            pointer-events: none; /* 讓滑鼠事件穿透 */
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-dark);
+            font-weight: 700;
+            font-size: 1.2rem;
         }
 
         /* 調整手柄樣式 */
@@ -142,124 +136,73 @@
             position: absolute;
             bottom: 0;
             right: 0;
-            width: 25px;
-            height: 25px;
-            cursor: nwse-resize; /* 斜向調整游標 */
+            width: 30px;
+            height: 30px;
+            cursor: se-resize; /* 斜向調整游標 */
             z-index: 30;
             background: linear-gradient(135deg, transparent 50%, var(--primary-color) 50%);
             opacity: 0;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, transform 0.2s;
             border-bottom-right-radius: var(--radius-lg);
         }
         
-        .widget:hover .resize-handle {
-            opacity: 0.8;
-        }
-        .resize-handle:hover {
-            opacity: 1;
-        }
+        .widget:hover .resize-handle { opacity: 0.6; }
+        .resize-handle:hover { opacity: 1; transform: scale(1.1); }
 
         .widget-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-shrink: 0;
-            cursor: grab; /* 整個標題列皆可拖曳 */
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; flex-shrink: 0; cursor: grab;
         }
         .widget-header:active { cursor: grabbing; }
 
         .widget-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--primary-dark);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            pointer-events: none;
+            font-size: 1.1rem; font-weight: 700; color: var(--primary-dark);
+            display: flex; align-items: center; gap: 10px; pointer-events: none;
         }
 
-        .drag-icon {
-            color: var(--text-muted);
-            opacity: 0.5;
-            font-size: 1.2rem;
-        }
+        .drag-icon { color: var(--text-muted); opacity: 0.5; font-size: 1.2rem; }
 
         /* --- 手機版 RWD (鎖定佈局) --- */
         @media (max-width: 768px) {
-            .dashboard-container { 
-                display: flex; 
-                flex-direction: column; 
-                gap: 20px; 
-            }
+            .dashboard-container { display: flex; flex-direction: column; gap: 20px; }
             .widget { 
-                grid-column: auto !important; 
-                grid-row: auto !important; 
-                min-height: 300px;
-                height: auto !important; /* 強制自動高度 */
+                grid-column: auto !important; grid-row: auto !important; 
+                min-height: 300px; height: auto !important;
             }
-            .resize-handle { display: none; } /* 手機隱藏調整手柄 */
+            .resize-handle { display: none; }
             header { height: auto; margin-bottom: 10px; }
         }
 
         /* --- Widget 1: 番茄鐘 --- */
         .widget-pomodoro {
             background: linear-gradient(145deg, #FFFFFF 0%, #FFF5ED 100%);
-            justify-content: center;
-            align-items: center;
-            text-align: center;
+            justify-content: center; align-items: center; text-align: center;
         }
-
         .timer-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: auto 0; /* 垂直置中 */
-            font-family: 'Nunito', sans-serif;
-            height: var(--digit-height);
-            transform: scale(0.9); /* 稍微縮小以適應各種尺寸 */
+            display: flex; align-items: center; justify-content: center; margin: auto 0;
+            font-family: 'Nunito', sans-serif; height: var(--digit-height); transform: scale(0.9);
         }
-
         .digit-group {
-            display: block;
-            position: relative;
-            font-size: 5rem; 
-            font-weight: 800;
-            line-height: var(--digit-height);
-            color: var(--primary-dark);
-            overflow: hidden;
-            height: var(--digit-height);
-            width: 0.7em;
+            display: block; position: relative; font-size: 5rem; font-weight: 800;
+            line-height: var(--digit-height); color: var(--primary-dark); overflow: hidden;
+            height: var(--digit-height); width: 0.7em;
         }
-
         .digit-wrapper {
-            display: block;
-            position: absolute;
-            top: 0; left: 0; width: 100%;
+            display: block; position: absolute; top: 0; left: 0; width: 100%;
             transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-
-        .digit {
-            height: var(--digit-height);
-            line-height: var(--digit-height);
-            display: flex; align-items: center; justify-content: center;
-        }
-
+        .digit { height: var(--digit-height); line-height: var(--digit-height); display: flex; align-items: center; justify-content: center; }
         .colon {
             font-size: 3.5rem; margin: 0 5px; color: var(--accent-color);
             line-height: var(--digit-height); height: var(--digit-height);
-            display: flex; align-items: center; padding-bottom: 10px;
-            animation: blink 1s infinite;
+            display: flex; align-items: center; padding-bottom: 10px; animation: blink 1s infinite;
         }
         @keyframes blink { 50% { opacity: 0.5; } }
-
         .timer-status {
             font-size: 1rem; font-weight: 700; color: var(--text-muted);
             margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px;
         }
-
         .timer-controls { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; justify-content: center; }
-        
         .btn-circle {
             width: 48px; height: 48px; border-radius: 50%; border: none;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -267,7 +210,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.03);
         }
         .btn-circle:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.08); color: var(--primary-dark); }
-        
         .btn-pill {
             height: 48px; padding: 0 24px; border-radius: 24px; background: var(--primary-color);
             color: white; font-size: 1rem; font-weight: 700; gap: 8px; border: none;
@@ -278,57 +220,38 @@
 
         /* --- Widget 2 & 3: 待辦與記帳 --- */
         .input-area { display: flex; gap: 10px; margin-bottom: 15px; flex-shrink: 0; }
-        
         input, textarea {
             flex: 1; padding: 12px 16px; border-radius: var(--radius-sm); border: 2px solid transparent;
-            background: #F4F1EE; font-size: 0.95rem; color: var(--text-main); transition: all 0.3s;
-            min-width: 0; /* 防止在小空間溢出 */
+            background: #F4F1EE; font-size: 0.95rem; color: var(--text-main); transition: all 0.3s; min-width: 0;
         }
-        input:focus, textarea:focus { 
-            outline: none; background: #FFF; border-color: var(--primary-color); 
-            box-shadow: 0 0 0 3px rgba(197, 157, 127, 0.1);
-        }
-        
+        input:focus, textarea:focus { outline: none; background: #FFF; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(197, 157, 127, 0.1); }
         .btn-icon {
-            width: 44px; height: 44px; border-radius: 14px; border: none;
-            background: var(--primary-color); color: white; font-size: 1.2rem; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0;
+            width: 44px; height: 44px; border-radius: 14px; border: none; background: var(--primary-color);
+            color: white; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: 0.2s; flex-shrink: 0;
         }
         .btn-icon:hover { background: var(--primary-dark); }
-        
-        /* 列表容器：使用 flex-grow 填充剩餘空間 */
-        .todo-list-container, .expense-list-container { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding-right: 5px; 
-            min-height: 0; /* 關鍵：允許 flex item 縮小 */
-        }
-        
+        .todo-list-container, .expense-list-container { flex: 1; overflow-y: auto; padding-right: 5px; min-height: 0; }
         .todo-item {
             display: flex; align-items: center; background: #FAFAFA; padding: 10px 14px;
-            margin-bottom: 8px; border-radius: 12px; border-left: 4px solid var(--primary-color);
-            transition: all 0.2s;
+            margin-bottom: 8px; border-radius: 12px; border-left: 4px solid var(--primary-color); transition: all 0.2s;
         }
         .todo-item:hover { background: #FFF; }
         .todo-item.completed { opacity: 0.6; border-left-color: var(--success-color); background: #F7F7F7; }
         .todo-item.completed span { text-decoration: line-through; color: var(--text-muted); }
         .checkbox-custom {
             width: 20px; height: 20px; border: 2px solid var(--primary-color); border-radius: 5px;
-            margin-right: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
+            margin-right: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
         .checkbox-custom.checked { background: var(--primary-color); }
         .checkbox-custom.checked::after { content: '✓'; color: white; font-size: 12px; font-weight: bold; }
-
         .balance-card {
             background: var(--primary-color); color: white; padding: 20px; border-radius: var(--radius-sm);
             margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end;
-            background-image: linear-gradient(135deg, var(--primary-color) 0%, #D4A373 100%);
-            flex-shrink: 0;
+            background-image: linear-gradient(135deg, var(--primary-color) 0%, #D4A373 100%); flex-shrink: 0;
         }
         .balance-label { font-size: 0.85rem; opacity: 0.9; margin-bottom: 4px; font-weight: 600; }
         .balance-amount { font-size: 1.8rem; font-weight: 800; line-height: 1; }
-        
         .expense-item {
             display: flex; justify-content: space-between; padding: 10px 0;
             border-bottom: 1px dashed #E0E0E0; font-size: 0.95rem; align-items: center;
@@ -340,56 +263,30 @@
         }
         .btn-text-danger:hover { color: var(--danger-color); }
         .empty-placeholder { 
-            text-align: center; color: var(--text-muted); 
-            display: flex; align-items: center; justify-content: center; height: 100%; font-size: 0.9rem; 
+            text-align: center; color: var(--text-muted); display: flex; align-items: center;
+            justify-content: center; height: 100%; font-size: 0.9rem; 
         }
         
         /* --- Widget 4: AI Voice Note --- */
-        .widget-voice {
-            display: flex; flex-direction: column;
-        }
-        
-        .voice-layout {
-            display: flex;
-            gap: 20px;
-            flex: 1;
-            overflow: hidden;
-            background: #FFFFFF;
-            min-height: 0; /* 允許縮小 */
-        }
-        
+        .widget-voice { display: flex; flex-direction: column; }
+        .voice-layout { display: flex; gap: 20px; flex: 1; overflow: hidden; background: #FFFFFF; min-height: 0; }
         .voice-controls {
-            width: 220px;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            background: linear-gradient(to bottom, #FFFCF9, #F7F5F2);
-            border-radius: var(--radius-sm);
-            padding: 20px;
-            border: 1px solid #F0F0F0;
+            width: 220px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-between;
+            background: linear-gradient(to bottom, #FFFCF9, #F7F5F2); border-radius: var(--radius-sm);
+            padding: 20px; border: 1px solid #F0F0F0;
         }
-
-        .visualizer {
-            display: flex; gap: 4px; height: 40px; margin-bottom: 10px; justify-content: center; align-items: center;
-        }
-        .wave-bar {
-            width: 5px; height: 5px; background-color: #E0E0E0; border-radius: 99px; transition: all 0.15s;
-        }
+        .visualizer { display: flex; gap: 4px; height: 40px; margin-bottom: 10px; justify-content: center; align-items: center; }
+        .wave-bar { width: 5px; height: 5px; background-color: #E0E0E0; border-radius: 99px; transition: all 0.15s; }
         .recording-active .wave-bar { background-color: var(--danger-color); }
-
         .voice-timer { font-size: 2rem; font-weight: 300; color: var(--text-main); text-align: center; margin-bottom: 5px; }
         .voice-status { font-size: 0.75rem; text-align: center; color: var(--text-muted); font-weight: 700; margin-bottom: 15px;}
-
         .btn-record-large {
-            width: 100%; padding: 12px; border-radius: 16px; background: var(--text-main);
-            color: white; border: none; font-size: 0.95rem; font-weight: 700; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;
-            transition: all 0.2s;
+            width: 100%; padding: 12px; border-radius: 16px; background: var(--text-main); color: white;
+            border: none; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; transition: all 0.2s;
         }
         .btn-record-large:hover { background: #332b26; }
         .btn-record-large.recording { background: var(--danger-color); animation: pulse 2s infinite; }
-        
         .voice-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .btn-sub {
             padding: 10px; border-radius: 10px; background: white; border: 1px solid #E5E5E5;
@@ -397,51 +294,38 @@
         }
         .btn-sub:hover { border-color: var(--primary-color); color: var(--primary-dark); }
         .btn-ai-magic:disabled { opacity: 0.5; }
-
         .voice-content-panel {
             flex: 1; display: flex; flex-direction: column; background: #FFF;
             border-radius: var(--radius-sm); border: 1px solid #F0F0F0; overflow: hidden; position: relative;
         }
-
         .voice-tabs { display: flex; padding: 5px; margin: 10px; background: #F4F1EE; border-radius: 10px; flex-shrink: 0; }
         .voice-tab {
             flex: 1; text-align: center; padding: 6px; font-size: 0.85rem; font-weight: 700;
             color: var(--text-muted); cursor: pointer; border-radius: 8px; border: none; background: transparent;
         }
         .voice-tab.active { background: white; color: var(--primary-dark); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-
-        .voice-textarea {
-            flex: 1; width: 100%; border: none; resize: none; padding: 0 20px 20px 20px;
-            font-size: 1rem; line-height: 1.6; background: transparent; outline: none;
-        }
-
+        .voice-textarea { flex: 1; width: 100%; border: none; resize: none; padding: 0 20px 20px 20px; font-size: 1rem; line-height: 1.6; background: transparent; outline: none; }
         .ai-results { padding: 0 20px 20px 20px; overflow-y: auto; height: 100%; }
         .tag { background: #F0EAE6; color: var(--primary-dark); padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: 700; display: inline-block; margin: 0 5px 5px 0; }
         .ai-card { background: #FFFCF9; border: 1px solid #F5EFE9; border-radius: 12px; padding: 15px; margin-bottom: 12px; }
         .ai-card h4 { font-size: 0.8rem; margin-bottom: 8px; color: var(--text-muted); }
-        
-        /* RWD 語音面板 */
         @media (max-width: 900px) {
             .voice-layout { flex-direction: column; }
             .voice-controls { width: 100%; flex-direction: row; align-items: center; gap: 15px; }
             .voice-timer { font-size: 1.5rem; margin: 0; }
-            .visualizer { display: none; } /* 空間不足隱藏 */
+            .visualizer { display: none; }
         }
-
-        /* Toast */
         #toastContainer { position: fixed; top: 24px; right: 24px; z-index: 100; pointer-events: none; }
         .toast {
             background: white; padding: 12px 20px; border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-left: 5px solid;
-            margin-bottom: 10px; font-size: 0.9rem; font-weight: 700; color: var(--text-main);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-left: 5px solid; margin-bottom: 10px;
+            font-size: 0.9rem; font-weight: 700; color: var(--text-main);
             animation: slideIn 0.3s; pointer-events: auto; display: flex; align-items: center; gap: 10px;
         }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #DBC8B6; border-radius: 10px; }
         ::-webkit-scrollbar-track { background: transparent; }
-
     </style>
 </head>
 <body>
@@ -458,15 +342,14 @@
             </div>
         </header>
 
-        <!-- Widget 1: 番茄鐘 (預設 Span: 5 cols, 6 rows) -->
-        <div class="widget widget-pomodoro" draggable="true" data-id="pomodoro" style="grid-column: span 5; grid-row: span 6;">
+        <!-- Widget 1: 番茄鐘 -->
+        <div class="widget widget-pomodoro" draggable="true" data-id="pomodoro" style="grid-column: span 5; grid-row: span 16;">
             <div class="resize-handle" title="拖曳調整大小"></div>
             <div class="widget-header">
                 <div class="drag-icon" title="拖曳位置">⋮⋮</div>
                 <div class="timer-status" id="timerStatus" style="margin:0; flex:1; text-align:center;">Ready to Focus?</div>
                 <div style="width: 24px;"></div>
             </div>
-
             <div class="timer-wrapper">
                 <div class="digit-group"><div class="digit-wrapper" id="min-tens"></div></div>
                 <div class="digit-group"><div class="digit-wrapper" id="min-ones"></div></div>
@@ -474,7 +357,6 @@
                 <div class="digit-group"><div class="digit-wrapper" id="sec-tens"></div></div>
                 <div class="digit-group"><div class="digit-wrapper" id="sec-ones"></div></div>
             </div>
-
             <div class="timer-controls">
                 <button class="btn-pill" id="mainBtn" onclick="toggleTimer()"><span>▶ 開始</span></button>
                 <button class="btn-circle" onclick="setMode(5)" title="休息">☕</button>
@@ -482,54 +364,45 @@
             </div>
         </div>
 
-        <!-- Widget 2: 待辦事項 (預設 Span: 7 cols, 10 rows) -->
-        <div class="widget widget-todo" draggable="true" data-id="todo" style="grid-column: span 7; grid-row: span 10;">
+        <!-- Widget 2: 待辦事項 -->
+        <div class="widget widget-todo" draggable="true" data-id="todo" style="grid-column: span 7; grid-row: span 24;">
             <div class="resize-handle"></div>
             <div class="widget-header">
                 <div class="widget-title"><div class="drag-icon">⋮⋮</div> 📝 待辦清單</div>
                 <button onclick="clearCompleted()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-weight:600; font-size:0.85rem;">清除完成</button>
             </div>
-            
             <div class="input-area">
                 <input type="text" id="todoInput" placeholder="今天想完成什麼？" onkeypress="if(event.key==='Enter') addTodo()">
                 <button class="btn-icon" onclick="addTodo()">＋</button>
             </div>
-
             <div class="todo-list-container" id="todoList"></div>
         </div>
 
-        <!-- Widget 3: 記帳 (預設 Span: 5 cols, 8 rows) -->
-        <div class="widget widget-expense" draggable="true" data-id="expense" style="grid-column: span 5; grid-row: span 8;">
+        <!-- Widget 3: 記帳 -->
+        <div class="widget widget-expense" draggable="true" data-id="expense" style="grid-column: span 5; grid-row: span 20;">
             <div class="resize-handle"></div>
             <div class="widget-header">
                 <div class="widget-title"><div class="drag-icon">⋮⋮</div> 💰 收支紀錄</div>
             </div>
-
             <div class="balance-card">
-                <div>
-                    <div class="balance-label">本月總支出</div>
-                    <div class="balance-amount" id="totalAmount">$0</div>
-                </div>
+                <div><div class="balance-label">本月總支出</div><div class="balance-amount" id="totalAmount">$0</div></div>
                 <div style="font-size: 2rem; opacity: 0.4;">💸</div>
             </div>
-
             <div class="input-area">
                 <input type="text" id="expenseName" placeholder="項目" style="flex: 2;">
                 <input type="number" id="expenseAmount" placeholder="$" style="flex: 1;">
                 <button class="btn-icon" onclick="addExpense()" style="width: 44px; height: 44px;">＋</button>
             </div>
-
             <div class="expense-list-container" id="expenseList"></div>
         </div>
 
-        <!-- Widget 4: AI Voice Note (預設 Span: 12 cols, 8 rows) -->
-        <div class="widget widget-voice" draggable="true" data-id="voice" style="grid-column: span 12; grid-row: span 8;">
+        <!-- Widget 4: AI Voice Note -->
+        <div class="widget widget-voice" draggable="true" data-id="voice" style="grid-column: span 12; grid-row: span 24;">
             <div class="resize-handle"></div>
             <div class="widget-header">
                 <div class="widget-title"><div class="drag-icon">⋮⋮</div> 🎙️ AI 語音筆記</div>
                 <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary-color); background: rgba(197, 157, 127, 0.1); padding: 4px 10px; border-radius: 20px;">Gemini</div>
             </div>
-
             <div class="voice-layout">
                 <div class="voice-controls">
                     <div>
@@ -550,7 +423,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="voice-content-panel">
                     <div class="voice-tabs">
                         <button id="tabTranscript" class="voice-tab active" onclick="switchVoiceTab('transcript')">逐字稿</button>
@@ -571,13 +443,12 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <div id="toastContainer"></div>
 
     <script>
-        /* --- 1. System: Clock & Drag/Resize --- */
+        /* --- 1. System: Clock & Enhanced Drag/Resize --- */
         function updateClock() {
             const now = new Date();
             const hours = now.getHours().toString().padStart(2, '0');
@@ -590,11 +461,10 @@
         const container = document.getElementById('dashboardGrid');
         let draggedItem = null;
 
-        // Load saved layout (Position & Size)
+        // Load saved layout
         function loadLayout() {
             const savedConfig = JSON.parse(localStorage.getItem('widgetConfig'));
             if (savedConfig) {
-                // Restore order and size
                 savedConfig.forEach(conf => {
                     const widget = document.querySelector(`.widget[data-id="${conf.id}"]`);
                     if(widget) {
@@ -610,29 +480,18 @@
         function saveLayout() {
             const widgets = Array.from(document.querySelectorAll('.widget'));
             const config = widgets.map(w => {
-                const style = window.getComputedStyle(w);
-                // Extract span numbers from style or inline
                 const colSpan = w.style.gridColumn.replace('span', '').trim() || '12';
-                const rowSpan = w.style.gridRow.replace('span', '').trim() || '6';
-                return {
-                    id: w.dataset.id,
-                    col: colSpan,
-                    row: rowSpan
-                };
+                const rowSpan = w.style.gridRow.replace('span', '').trim() || '16';
+                return { id: w.dataset.id, col: colSpan, row: rowSpan };
             });
             localStorage.setItem('widgetConfig', JSON.stringify(config));
         }
 
-        // Drag & Resize Logic
+        // Resize Logic with Ghost Element
         document.querySelectorAll('.widget').forEach(widget => {
-            // 1. Dragging
             const header = widget.querySelector('.widget-header');
-            header.addEventListener('mousedown', () => {
-                widget.setAttribute('draggable', 'true');
-            });
-            header.addEventListener('mouseup', () => {
-                widget.setAttribute('draggable', 'false');
-            });
+            header.addEventListener('mousedown', () => { widget.setAttribute('draggable', 'true'); });
+            header.addEventListener('mouseup', () => { widget.setAttribute('draggable', 'false'); });
 
             widget.addEventListener('dragstart', function(e) {
                 draggedItem = this;
@@ -647,54 +506,64 @@
                 saveLayout();
             });
 
-            // 2. Resizing
             const handle = widget.querySelector('.resize-handle');
-            if(handle) {
-                handle.addEventListener('mousedown', initResize);
-            }
+            if(handle) handle.addEventListener('mousedown', initResize);
         });
 
         function initResize(e) {
-            e.preventDefault();
-            e.stopPropagation(); // Stop drag event
+            e.preventDefault(); e.stopPropagation();
             const widget = e.target.closest('.widget');
             const startX = e.clientX;
             const startY = e.clientY;
-            const startWidth = widget.offsetWidth;
-            const startHeight = widget.offsetHeight;
+            const rect = widget.getBoundingClientRect();
+            const startWidth = rect.width;
+            const startHeight = rect.height;
             
-            // Grid params
-            const styles = window.getComputedStyle(container);
-            const gap = parseFloat(styles.gap);
-            // Estimate Col Width (Container Width - 11 gaps) / 12
+            // Grid Constants
+            const gap = 20; // var(--grid-gap)
             const containerWidth = container.offsetWidth;
             const colWidth = (containerWidth - (11 * gap)) / 12;
-            const rowHeight = 60; // CSS var
+            const rowHeight = 20; // var(--grid-row-height)
 
-            // Get current Spans
-            let startColSpan = parseInt(widget.style.gridColumn.replace('span', '')) || 12;
-            let startRowSpan = parseInt(widget.style.gridRow.replace('span', '')) || 6;
-
-            widget.classList.add('resizing');
+            // Create Ghost
+            const ghost = document.createElement('div');
+            ghost.className = 'ghost-widget';
+            ghost.style.width = startWidth + 'px';
+            ghost.style.height = startHeight + 'px';
+            ghost.style.top = (window.scrollY + rect.top) + 'px';
+            ghost.style.left = (window.scrollX + rect.left) + 'px';
+            document.body.appendChild(ghost);
+            
+            widget.classList.add('resizing-source');
 
             function doDrag(e) {
-                const newWidth = startWidth + e.clientX - startX;
-                const newHeight = startHeight + e.clientY - startY;
+                const newWidth = Math.max(100, startWidth + e.clientX - startX);
+                const newHeight = Math.max(100, startHeight + e.clientY - startY);
+                ghost.style.width = newWidth + 'px';
+                ghost.style.height = newHeight + 'px';
+                
+                // Live Feedback Text
+                const estCols = Math.max(3, Math.min(12, Math.round((newWidth + gap) / (colWidth + gap))));
+                const estRows = Math.max(6, Math.round((newHeight + gap) / (rowHeight + gap)));
+                ghost.innerText = `${estCols} × ${estRows}`;
+            }
 
-                // Calculate new Spans
-                let newColSpan = Math.round((newWidth + gap) / (colWidth + gap));
-                let newRowSpan = Math.round((newHeight + gap) / (rowHeight + gap));
+            function stopDrag(e) {
+                const finalWidth = parseFloat(ghost.style.width);
+                const finalHeight = parseFloat(ghost.style.height);
+                
+                let newColSpan = Math.round((finalWidth + gap) / (colWidth + gap));
+                let newRowSpan = Math.round((finalHeight + gap) / (rowHeight + gap));
 
-                // Limits
-                newColSpan = Math.max(3, Math.min(12, newColSpan)); // Min 3 cols, Max 12
-                newRowSpan = Math.max(4, newRowSpan); // Min 4 rows
+                newColSpan = Math.max(3, Math.min(12, newColSpan));
+                newRowSpan = Math.max(6, newRowSpan);
 
                 widget.style.gridColumn = `span ${newColSpan}`;
                 widget.style.gridRow = `span ${newRowSpan}`;
-            }
-
-            function stopDrag() {
-                widget.classList.remove('resizing');
+                
+                ghost.remove();
+                widget.classList.remove('resizing-source');
+                
                 window.removeEventListener('mousemove', doDrag);
                 window.removeEventListener('mouseup', stopDrag);
                 saveLayout();
@@ -717,7 +586,6 @@
                 const box = child.getBoundingClientRect();
                 const offsetX = x - box.left - box.width / 2;
                 const offsetY = y - box.top - box.height / 2;
-                // Simple proximity check
                 if (offsetY < 0 && offsetY > closest.offsetY) return { offset: offsetY, element: child, offsetY: offsetY };
                 else return closest;
             }, { offset: Number.NEGATIVE_INFINITY, offsetY: Number.NEGATIVE_INFINITY }).element;
@@ -813,7 +681,7 @@
 
         /* --- 4. AI Voice Note --- */
         let voiceRec = false, recognition = null, vInterval, vStart, vElapsed = 0;
-        const apiKey = ""; // GitHub Pages: Leave empty, user prompt
+        const apiKey = ""; 
         
         const bars = document.querySelectorAll('.wave-bar');
         setInterval(() => {
