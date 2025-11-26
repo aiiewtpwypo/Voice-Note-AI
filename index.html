@@ -824,11 +824,23 @@
             });
         }
 
+        function promptUser(title, placeholder) {
+            return new Promise((resolve) => {
+                openInputModal(title, placeholder, (val) => {
+                    resolve(val);
+                });
+            });
+        }
+
         async function searchMusicWithAI(query) {
             try {
                 showToast('正在搜尋音樂...', 'success');
                 let key = apiKey || localStorage.getItem('gemini_api_key');
-                if(!key) { key = prompt("請輸入 Gemini API Key:"); if(key) localStorage.setItem('gemini_api_key', key); else throw new Error("無 API Key"); }
+                if(!key) { 
+                    key = await promptUser("請輸入 Gemini API Key", "請輸入您的 API Key 以使用搜尋功能"); 
+                    if(key) localStorage.setItem('gemini_api_key', key); 
+                    else { showToast("需要 API Key", "error"); return; }
+                }
                 
                 const systemPrompt = `You are a music assistant. The user wants to listen to: '${query}'. Please provide a valid YouTube Video ID for a video that matches this request. Return ONLY the Video ID string (e.g., jfKfPfyJRdk). Do not write anything else.`;
 
@@ -872,8 +884,8 @@
         }
         function submitInput() {
             const val = document.getElementById('customInputValue').value;
-            if (inputCallback) inputCallback(val);
             closeInputModal();
+            if (inputCallback) inputCallback(val);
         }
         document.getElementById('customInputValue').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') submitInput();
@@ -1374,7 +1386,16 @@
             
             try {
                 let key = apiKey || localStorage.getItem('gemini_api_key');
-                if(!key) { key = prompt("請輸入 Gemini API Key:"); if(key) localStorage.setItem('gemini_api_key', key); else throw new Error("無 API Key"); }
+                if(!key) { 
+                    key = await promptUser("請輸入 Gemini API Key", "請輸入您的 API Key 以使用 AI 功能"); 
+                    if(key) localStorage.setItem('gemini_api_key', key); 
+                    else { 
+                        showToast("需要 API Key", "error"); 
+                        document.getElementById('aiLoading').style.display = 'none';
+                        document.getElementById('aiEmptyState').style.display = 'flex';
+                        return; 
+                    }
+                }
                 
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
