@@ -25,9 +25,9 @@
             --shadow-hover: 0 20px 50px -12px rgba(197, 157, 127, 0.25);
             --digit-height: 80px;
             
-            /* Grid 設定：更精細的單元格 */
-            --grid-gap: 20px;
-            --grid-row-height: 20px; /* 降低高度以允許更自由的調整 */
+            /* Grid 設定：恢復較大的基礎網格以確保對齊 */
+            --grid-gap: 24px;
+            --grid-row-height: 60px; 
         }
 
         * {
@@ -43,6 +43,7 @@
             color: var(--text-main);
             min-height: 100vh;
             padding: 20px;
+            /* 格點背景輔助對齊感 */
             background-image: radial-gradient(var(--primary-color) 1px, transparent 1px);
             background-size: 40px 40px;
             background-position: 0 0;
@@ -64,7 +65,7 @@
         /* 標題區 */
         header {
             grid-column: span 12;
-            grid-row: span 4;
+            grid-row: span 2;
             padding: 10px 0;
             display: flex;
             align-items: center;
@@ -111,24 +112,27 @@
         }
 
         .widget.dragging { opacity: 0.3; border: 2px dashed var(--primary-color); box-shadow: none; z-index: 20; }
-        .widget.resizing-source { opacity: 0.3; } /* 調整時原始卡片的樣式 */
+        /* 調整時，原始卡片淡化 */
+        .widget.resizing-source { opacity: 0.4; filter: grayscale(0.5); }
 
-        /* 幽靈卡片 (調整大小時顯示) */
+        /* 幽靈卡片 (調整大小時顯示的預覽框) */
         .ghost-widget {
             position: absolute;
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid var(--primary-color);
+            background: rgba(197, 157, 127, 0.1);
+            border: 3px dashed var(--primary-dark);
             border-radius: var(--radius-lg);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
             z-index: 100;
-            pointer-events: none; /* 讓滑鼠事件穿透 */
-            backdrop-filter: blur(5px);
+            pointer-events: none;
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--primary-dark);
-            font-weight: 700;
-            font-size: 1.2rem;
+            font-weight: 800;
+            font-size: 1.5rem;
+            backdrop-filter: blur(2px);
+            box-sizing: border-box;
+            /* 平滑過渡效果，讓吸附感更強 */
+            transition: width 0.1s ease-out, height 0.1s ease-out; 
         }
 
         /* 調整手柄樣式 */
@@ -138,15 +142,16 @@
             right: 0;
             width: 30px;
             height: 30px;
-            cursor: se-resize; /* 斜向調整游標 */
+            cursor: nwse-resize;
             z-index: 30;
+            /* 使用圖示或形狀暗示可拖曳 */
             background: linear-gradient(135deg, transparent 50%, var(--primary-color) 50%);
             opacity: 0;
             transition: opacity 0.2s, transform 0.2s;
             border-bottom-right-radius: var(--radius-lg);
         }
         
-        .widget:hover .resize-handle { opacity: 0.6; }
+        .widget:hover .resize-handle { opacity: 0.7; }
         .resize-handle:hover { opacity: 1; transform: scale(1.1); }
 
         .widget-header {
@@ -342,8 +347,8 @@
             </div>
         </header>
 
-        <!-- Widget 1: 番茄鐘 -->
-        <div class="widget widget-pomodoro" draggable="true" data-id="pomodoro" style="grid-column: span 5; grid-row: span 16;">
+        <!-- Widget 1: 番茄鐘 (Span: 5 cols, 5 rows * 60px) -->
+        <div class="widget widget-pomodoro" draggable="true" data-id="pomodoro" style="grid-column: span 5; grid-row: span 5;">
             <div class="resize-handle" title="拖曳調整大小"></div>
             <div class="widget-header">
                 <div class="drag-icon" title="拖曳位置">⋮⋮</div>
@@ -364,8 +369,8 @@
             </div>
         </div>
 
-        <!-- Widget 2: 待辦事項 -->
-        <div class="widget widget-todo" draggable="true" data-id="todo" style="grid-column: span 7; grid-row: span 24;">
+        <!-- Widget 2: 待辦事項 (Span: 7 cols, 7 rows * 60px) -->
+        <div class="widget widget-todo" draggable="true" data-id="todo" style="grid-column: span 7; grid-row: span 7;">
             <div class="resize-handle"></div>
             <div class="widget-header">
                 <div class="widget-title"><div class="drag-icon">⋮⋮</div> 📝 待辦清單</div>
@@ -378,8 +383,8 @@
             <div class="todo-list-container" id="todoList"></div>
         </div>
 
-        <!-- Widget 3: 記帳 -->
-        <div class="widget widget-expense" draggable="true" data-id="expense" style="grid-column: span 5; grid-row: span 20;">
+        <!-- Widget 3: 記帳 (Span: 5 cols, 6 rows * 60px) -->
+        <div class="widget widget-expense" draggable="true" data-id="expense" style="grid-column: span 5; grid-row: span 6;">
             <div class="resize-handle"></div>
             <div class="widget-header">
                 <div class="widget-title"><div class="drag-icon">⋮⋮</div> 💰 收支紀錄</div>
@@ -396,8 +401,8 @@
             <div class="expense-list-container" id="expenseList"></div>
         </div>
 
-        <!-- Widget 4: AI Voice Note -->
-        <div class="widget widget-voice" draggable="true" data-id="voice" style="grid-column: span 12; grid-row: span 24;">
+        <!-- Widget 4: AI Voice Note (Span: 12 cols, 8 rows * 60px) -->
+        <div class="widget widget-voice" draggable="true" data-id="voice" style="grid-column: span 12; grid-row: span 8;">
             <div class="resize-handle"></div>
             <div class="widget-header">
                 <div class="widget-title"><div class="drag-icon">⋮⋮</div> 🎙️ AI 語音筆記</div>
@@ -448,7 +453,7 @@
     <div id="toastContainer"></div>
 
     <script>
-        /* --- 1. System: Clock & Enhanced Drag/Resize --- */
+        /* --- 1. System: Clock & Snap-to-Grid Resize --- */
         function updateClock() {
             const now = new Date();
             const hours = now.getHours().toString().padStart(2, '0');
@@ -481,13 +486,13 @@
             const widgets = Array.from(document.querySelectorAll('.widget'));
             const config = widgets.map(w => {
                 const colSpan = w.style.gridColumn.replace('span', '').trim() || '12';
-                const rowSpan = w.style.gridRow.replace('span', '').trim() || '16';
+                const rowSpan = w.style.gridRow.replace('span', '').trim() || '6';
                 return { id: w.dataset.id, col: colSpan, row: rowSpan };
             });
             localStorage.setItem('widgetConfig', JSON.stringify(config));
         }
 
-        // Resize Logic with Ghost Element
+        // Drag & Resize Logic
         document.querySelectorAll('.widget').forEach(widget => {
             const header = widget.querySelector('.widget-header');
             header.addEventListener('mousedown', () => { widget.setAttribute('draggable', 'true'); });
@@ -520,35 +525,52 @@
             const startHeight = rect.height;
             
             // Grid Constants
-            const gap = 20; // var(--grid-gap)
+            const gap = 24; // var(--grid-gap)
             const containerWidth = container.offsetWidth;
             const colWidth = (containerWidth - (11 * gap)) / 12;
-            const rowHeight = 20; // var(--grid-row-height)
+            const rowHeight = 60; // var(--grid-row-height)
 
-            // Create Ghost
+            // Create Ghost Widget
             const ghost = document.createElement('div');
             ghost.className = 'ghost-widget';
             ghost.style.width = startWidth + 'px';
             ghost.style.height = startHeight + 'px';
             ghost.style.top = (window.scrollY + rect.top) + 'px';
             ghost.style.left = (window.scrollX + rect.left) + 'px';
-            document.body.appendChild(ghost);
             
+            // Set initial spans for calculation
+            let currentColSpan = Math.round((startWidth + gap) / (colWidth + gap));
+            let currentRowSpan = Math.round((startHeight + gap) / (rowHeight + gap));
+            ghost.innerText = `${currentColSpan} × ${currentRowSpan}`;
+            
+            document.body.appendChild(ghost);
             widget.classList.add('resizing-source');
 
             function doDrag(e) {
-                const newWidth = Math.max(100, startWidth + e.clientX - startX);
-                const newHeight = Math.max(100, startHeight + e.clientY - startY);
-                ghost.style.width = newWidth + 'px';
-                ghost.style.height = newHeight + 'px';
+                // Calculate raw new dimensions
+                const rawWidth = Math.max(100, startWidth + e.clientX - startX);
+                const rawHeight = Math.max(100, startHeight + e.clientY - startY);
                 
-                // Live Feedback Text
-                const estCols = Math.max(3, Math.min(12, Math.round((newWidth + gap) / (colWidth + gap))));
-                const estRows = Math.max(6, Math.round((newHeight + gap) / (rowHeight + gap)));
-                ghost.innerText = `${estCols} × ${estRows}`;
+                // Calculate Snapped Spans
+                let newColSpan = Math.round((rawWidth + gap) / (colWidth + gap));
+                let newRowSpan = Math.round((rawHeight + gap) / (rowHeight + gap));
+
+                // Constraints
+                newColSpan = Math.max(3, Math.min(12, newColSpan)); // Min 3 cols, Max 12
+                newRowSpan = Math.max(3, newRowSpan); // Min 3 rows
+
+                // Calculate Snapped Pixels for Ghost
+                const snappedWidth = newColSpan * (colWidth + gap) - gap;
+                const snappedHeight = newRowSpan * (rowHeight + gap) - gap;
+
+                // Apply to Ghost (Visual Feedback)
+                ghost.style.width = snappedWidth + 'px';
+                ghost.style.height = snappedHeight + 'px';
+                ghost.innerText = `${newColSpan} × ${newRowSpan}`;
             }
 
             function stopDrag(e) {
+                // Finalize dimensions
                 const finalWidth = parseFloat(ghost.style.width);
                 const finalHeight = parseFloat(ghost.style.height);
                 
@@ -556,7 +578,7 @@
                 let newRowSpan = Math.round((finalHeight + gap) / (rowHeight + gap));
 
                 newColSpan = Math.max(3, Math.min(12, newColSpan));
-                newRowSpan = Math.max(6, newRowSpan);
+                newRowSpan = Math.max(3, newRowSpan);
 
                 widget.style.gridColumn = `span ${newColSpan}`;
                 widget.style.gridRow = `span ${newRowSpan}`;
