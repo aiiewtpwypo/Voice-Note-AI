@@ -25,7 +25,6 @@
             --shadow-hover: 0 20px 50px -12px rgba(197, 157, 127, 0.25);
             --digit-height: 80px;
             
-            /* Grid 設定：恢復較大的基礎網格以確保對齊 */
             --grid-gap: 24px;
             --grid-row-height: 60px; 
         }
@@ -43,13 +42,12 @@
             color: var(--text-main);
             min-height: 100vh;
             padding: 20px;
-            /* 格點背景輔助對齊感 */
             background-image: radial-gradient(var(--primary-color) 1px, transparent 1px);
             background-size: 40px 40px;
             background-position: 0 0;
         }
 
-        /* --- 佈局系統 (Bento Grid) --- */
+        /* --- 佈局系統 --- */
         .dashboard-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -62,7 +60,7 @@
             grid-auto-flow: dense;
         }
 
-        /* 標題區 */
+        /* Header */
         header {
             grid-column: span 12;
             grid-row: span 2;
@@ -86,6 +84,51 @@
             font-weight: 500;
         }
 
+        /* 新增：Header 中間的專注目標輸入框 */
+        .header-center {
+            flex: 1;
+            margin: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .focus-input-wrapper {
+            background: white;
+            padding: 8px 20px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(197, 157, 127, 0.1);
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid rgba(197, 157, 127, 0.2);
+            transition: all 0.3s;
+        }
+        .focus-input-wrapper:focus-within {
+            box-shadow: 0 4px 15px rgba(197, 157, 127, 0.2);
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+        }
+        .focus-label {
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+        .focus-input {
+            border: none;
+            outline: none;
+            font-size: 1rem;
+            color: var(--text-main);
+            width: 100%;
+            background: transparent;
+            font-weight: 600;
+        }
+        .focus-input::placeholder {
+            color: var(--text-muted);
+            font-weight: 400;
+            opacity: 0.7;
+        }
+
         .header-right {
             display: flex;
             align-items: center;
@@ -96,7 +139,6 @@
         .time-now { font-size: 1.5rem; font-weight: 800; color: var(--primary-dark); font-variant-numeric: tabular-nums; line-height: 1.2; }
         .date-now { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
 
-        /* 設定按鈕 */
         .btn-settings {
             width: 44px; height: 44px; border-radius: 12px; border: none;
             background: white; color: var(--text-muted); cursor: pointer;
@@ -112,7 +154,7 @@
             border-radius: var(--radius-lg);
             padding: 24px;
             box-shadow: var(--shadow-soft);
-            transition: box-shadow 0.2s ease, transform 0.1s, grid-column 0.3s ease, grid-row 0.3s ease; /* 增加 Grid 過渡動畫 */
+            transition: box-shadow 0.2s ease, transform 0.1s, grid-column 0.3s ease, grid-row 0.3s ease;
             display: flex;
             flex-direction: column;
             border: 1px solid rgba(255,255,255,0.6);
@@ -128,10 +170,8 @@
         }
 
         .widget.dragging { opacity: 0.3; border: 2px dashed var(--primary-color); box-shadow: none; z-index: 20; }
-        /* 調整時，原始卡片淡化 */
         .widget.resizing-source { opacity: 0.4; filter: grayscale(0.5); }
 
-        /* 幽靈卡片 (調整大小時顯示的預覽框) */
         .ghost-widget {
             position: absolute;
             background: rgba(197, 157, 127, 0.1);
@@ -147,26 +187,14 @@
             font-size: 1.5rem;
             backdrop-filter: blur(2px);
             box-sizing: border-box;
-            /* 平滑過渡效果，讓吸附感更強 */
             transition: width 0.1s ease-out, height 0.1s ease-out; 
         }
 
-        /* 調整手柄樣式 */
         .resize-handle {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 30px;
-            height: 30px;
-            cursor: nwse-resize;
-            z-index: 30;
-            /* 使用圖示或形狀暗示可拖曳 */
+            position: absolute; bottom: 0; right: 0; width: 30px; height: 30px; cursor: nwse-resize; z-index: 30;
             background: linear-gradient(135deg, transparent 50%, var(--primary-color) 50%);
-            opacity: 0;
-            transition: opacity 0.2s, transform 0.2s;
-            border-bottom-right-radius: var(--radius-lg);
+            opacity: 0; transition: opacity 0.2s, transform 0.2s; border-bottom-right-radius: var(--radius-lg);
         }
-        
         .widget:hover .resize-handle { opacity: 0.7; }
         .resize-handle:hover { opacity: 1; transform: scale(1.1); }
 
@@ -183,7 +211,7 @@
 
         .drag-icon { color: var(--text-muted); opacity: 0.5; font-size: 1.2rem; }
 
-        /* --- Settings Modal --- */
+        /* Settings Modal */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.3); backdrop-filter: blur(5px);
@@ -191,69 +219,39 @@
             opacity: 0; transition: opacity 0.3s;
         }
         .modal-overlay.active { display: flex; opacity: 1; }
-        
         .modal-content {
-            background: #FFF; width: 90%; max-width: 750px;
-            border-radius: 24px; padding: 30px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-            transform: translateY(20px); transition: transform 0.3s;
+            background: #FFF; width: 90%; max-width: 750px; border-radius: 24px; padding: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2); transform: translateY(20px); transition: transform 0.3s;
         }
         .modal-overlay.active .modal-content { transform: translateY(0); }
-
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .modal-header h2 { font-size: 1.5rem; color: var(--primary-dark); font-weight: 800; }
         .btn-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
         
-        /* 預設模板網格：上二下三佈局 */
-        .templates-grid { 
-            display: grid; 
-            grid-template-columns: repeat(6, 1fr); /* 設為6欄以便分配2與3的公倍數 */
-            gap: 15px; 
-        }
-        
+        .templates-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; }
         .template-card {
             border: 2px solid #F0EAE6; border-radius: 16px; padding: 15px; cursor: pointer;
             transition: all 0.2s; text-align: center; background: #FAFAFA;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        
-        /* 前兩個卡片佔一半寬度 (3/6) */
-        .template-card:nth-child(1),
-        .template-card:nth-child(2) {
-            grid-column: span 3;
-        }
-        
-        /* 後三個卡片佔三分之一寬度 (2/6) */
-        .template-card:nth-child(3),
-        .template-card:nth-child(4),
-        .template-card:nth-child(5) {
-            grid-column: span 2;
-        }
-
-        /* 手機版則改為單欄堆疊 */
-        @media (max-width: 600px) {
-            .templates-grid { grid-template-columns: 1fr; }
-            .template-card { grid-column: span 1 !important; }
-        }
-
+        .template-card:nth-child(1), .template-card:nth-child(2) { grid-column: span 3; }
+        .template-card:nth-child(3), .template-card:nth-child(4), .template-card:nth-child(5) { grid-column: span 2; }
         .template-card:hover { border-color: var(--primary-color); background: #FFF; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .template-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
         .template-name { font-weight: 700; color: var(--text-main); font-size: 0.95rem; }
         .template-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 5px; }
 
-        /* --- 手機版 RWD (鎖定佈局) --- */
         @media (max-width: 768px) {
             .dashboard-container { display: flex; flex-direction: column; gap: 20px; }
-            .widget { 
-                grid-column: auto !important; grid-row: auto !important; 
-                min-height: 300px; height: auto !important;
-            }
+            .widget { grid-column: auto !important; grid-row: auto !important; min-height: 300px; height: auto !important; }
             .resize-handle { display: none; }
-            header { height: auto; margin-bottom: 10px; }
-            .header-right { flex-direction: column-reverse; gap: 10px; align-items: flex-end; }
+            header { height: auto; flex-direction: column; margin-bottom: 10px; gap: 15px; }
+            .header-right { flex-direction: row; gap: 10px; align-items: center; width: 100%; justify-content: space-between; }
+            .header-center { margin: 0; width: 100%; order: 3; }
+            .header-left { width: 100%; }
         }
 
-        /* --- Widget Styles (Same as before) --- */
+        /* Widget Styles */
         .widget-pomodoro { background: linear-gradient(145deg, #FFFFFF 0%, #FFF5ED 100%); justify-content: center; align-items: center; text-align: center; }
         .timer-wrapper { display: flex; align-items: center; justify-content: center; margin: auto 0; font-family: 'Nunito', sans-serif; height: var(--digit-height); transform: scale(0.9); }
         .digit-group { display: block; position: relative; font-size: 5rem; font-weight: 800; line-height: var(--digit-height); color: var(--primary-dark); overflow: hidden; height: var(--digit-height); width: 0.7em; }
@@ -290,6 +288,7 @@
         .btn-text-danger:hover { color: var(--danger-color); }
         .empty-placeholder { text-align: center; color: var(--text-muted); display: flex; align-items: center; justify-content: center; height: 100%; font-size: 0.9rem; }
         
+        /* Voice Widget */
         .widget-voice { display: flex; flex-direction: column; }
         .voice-layout { display: flex; gap: 20px; flex: 1; overflow: hidden; background: #FFFFFF; min-height: 0; }
         .voice-controls { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(to bottom, #FFFCF9, #F7F5F2); border-radius: var(--radius-sm); padding: 20px; border: 1px solid #F0F0F0; }
@@ -314,12 +313,34 @@
         .tag { background: #F0EAE6; color: var(--primary-dark); padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: 700; display: inline-block; margin: 0 5px 5px 0; }
         .ai-card { background: #FFFCF9; border: 1px solid #F5EFE9; border-radius: 12px; padding: 15px; margin-bottom: 12px; }
         .ai-card h4 { font-size: 0.8rem; margin-bottom: 8px; color: var(--text-muted); }
-        @media (max-width: 900px) {
-            .voice-layout { flex-direction: column; }
-            .voice-controls { width: 100%; flex-direction: row; align-items: center; gap: 15px; }
-            .voice-timer { font-size: 1.5rem; margin: 0; }
-            .visualizer { display: none; }
+
+        /* Music Widget Styles */
+        .widget-music {
+            background: #1DB954; /* Spotify Green fallback or just a nice color */
+            background: linear-gradient(135deg, #1e2a3a 0%, #2c3e50 100%);
+            color: white;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
         }
+        .music-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        .music-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        /* Cover drag handle when not hovering */
+        .widget-music .resize-handle {
+            background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.5) 50%);
+        }
+
         #toastContainer { position: fixed; top: 24px; right: 24px; z-index: 100; pointer-events: none; }
         .toast { background: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-left: 5px solid; margin-bottom: 10px; font-size: 0.9rem; font-weight: 700; color: var(--text-main); animation: slideIn 0.3s; pointer-events: auto; display: flex; align-items: center; gap: 10px; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -336,6 +357,15 @@
                 <h1>Student Dashboard</h1>
                 <div class="subtitle">Design Your Perfect Workflow.</div>
             </div>
+            
+            <!-- 新增：專注目標輸入 -->
+            <div class="header-center">
+                <div class="focus-input-wrapper">
+                    <span class="focus-label">🎯</span>
+                    <input type="text" id="focusInput" class="focus-input" placeholder="今天最重要的目標是？" onchange="saveFocus(this.value)">
+                </div>
+            </div>
+
             <div class="header-right">
                 <div class="clock-display">
                     <div class="time-now" id="clockTime">00:00</div>
@@ -345,7 +375,7 @@
             </div>
         </header>
 
-        <!-- Widget 1: 番茄鐘 (Span: 5 cols, 5 rows) -->
+        <!-- Widget 1: 番茄鐘 -->
         <div class="widget widget-pomodoro" draggable="true" data-id="pomodoro" style="grid-column: span 5; grid-row: span 5;">
             <div class="resize-handle" title="拖曳調整大小"></div>
             <div class="widget-header">
@@ -367,8 +397,8 @@
             </div>
         </div>
 
-        <!-- Widget 2: 待辦事項 (Span: 7 cols, 7 rows) -->
-        <div class="widget widget-todo" draggable="true" data-id="todo" style="grid-column: span 7; grid-row: span 7;">
+        <!-- Widget 2: 待辦事項 (調整高度為 9 行) -->
+        <div class="widget widget-todo" draggable="true" data-id="todo" style="grid-column: span 7; grid-row: span 9;">
             <div class="resize-handle"></div>
             <div class="widget-header">
                 <div class="widget-title"><div class="drag-icon">⋮⋮</div> 📝 待辦清單</div>
@@ -381,8 +411,8 @@
             <div class="todo-list-container" id="todoList"></div>
         </div>
 
-        <!-- Widget 3: 記帳 (Span: 5 cols, 6 rows) -->
-        <div class="widget widget-expense" draggable="true" data-id="expense" style="grid-column: span 5; grid-row: span 6;">
+        <!-- Widget 3: 記帳 (高度調整為 4 行) -->
+        <div class="widget widget-expense" draggable="true" data-id="expense" style="grid-column: span 5; grid-row: span 4;">
             <div class="resize-handle"></div>
             <div class="widget-header">
                 <div class="widget-title"><div class="drag-icon">⋮⋮</div> 💰 收支紀錄</div>
@@ -399,8 +429,8 @@
             <div class="expense-list-container" id="expenseList"></div>
         </div>
 
-        <!-- Widget 4: AI Voice Note (Span: 12 cols, 8 rows) -->
-        <div class="widget widget-voice" draggable="true" data-id="voice" style="grid-column: span 12; grid-row: span 8;">
+        <!-- Widget 4: AI Voice Note (調整寬度，騰出空間給音樂) -->
+        <div class="widget widget-voice" draggable="true" data-id="voice" style="grid-column: span 7; grid-row: span 6;">
             <div class="resize-handle"></div>
             <div class="widget-header">
                 <div class="widget-title"><div class="drag-icon">⋮⋮</div> 🎙️ AI 語音筆記</div>
@@ -446,6 +476,16 @@
                 </div>
             </div>
         </div>
+
+        <!-- 新增 Widget 5: Music Player (填補右下角) -->
+        <div class="widget widget-music" draggable="true" data-id="music" style="grid-column: span 5; grid-row: span 6;">
+            <div class="resize-handle"></div>
+            <div class="music-container">
+                <!-- Lofi Girl Radio -->
+                <iframe class="music-iframe" src="https://www.youtube.com/embed/jfKfPfyJRdk?controls=0&autoplay=0" title="Lofi Girl" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        </div>
+
     </div>
 
     <!-- Settings Modal -->
@@ -502,39 +542,52 @@
         const container = document.getElementById('dashboardGrid');
         let draggedItem = null;
 
-        // Templates Definition
+        // Templates Definition (Updated Classic)
         const templates = {
             classic: [
                 { id: 'pomodoro', col: 5, row: 5 },
-                { id: 'todo', col: 7, row: 9 }, // 改為 7x9，與左側總高 (5+4=9) 切齊
-                { id: 'expense', col: 5, row: 4 }, // 改為 5x4
-                { id: 'voice', col: 12, row: 8 }
+                { id: 'todo', col: 7, row: 9 },
+                { id: 'expense', col: 5, row: 4 },
+                { id: 'voice', col: 7, row: 6 },
+                { id: 'music', col: 5, row: 6 }
             ],
             focus: [
                 { id: 'pomodoro', col: 8, row: 8 },
                 { id: 'todo', col: 4, row: 14 },
                 { id: 'voice', col: 8, row: 6 },
-                { id: 'expense', col: 12, row: 4 }
+                { id: 'expense', col: 12, row: 4 },
+                { id: 'music', col: 12, row: 4 }
             ],
             planner: [
                 { id: 'todo', col: 12, row: 8 },
                 { id: 'pomodoro', col: 6, row: 6 },
                 { id: 'voice', col: 6, row: 6 },
-                { id: 'expense', col: 12, row: 4 }
+                { id: 'expense', col: 12, row: 4 },
+                { id: 'music', col: 12, row: 4 }
             ],
             financial: [
                 { id: 'expense', col: 8, row: 12 },
                 { id: 'pomodoro', col: 4, row: 6 },
                 { id: 'todo', col: 4, row: 6 },
-                { id: 'voice', col: 12, row: 6 }
+                { id: 'voice', col: 12, row: 6 },
+                { id: 'music', col: 12, row: 6 }
             ],
             voice_first: [
                 { id: 'voice', col: 8, row: 12 },
                 { id: 'pomodoro', col: 4, row: 6 },
                 { id: 'todo', col: 4, row: 6 },
-                { id: 'expense', col: 12, row: 6 }
+                { id: 'expense', col: 12, row: 6 },
+                { id: 'music', col: 12, row: 6 }
             ]
         };
+
+        // Focus Input Logic
+        const focusInput = document.getElementById('focusInput');
+        focusInput.value = localStorage.getItem('dailyFocus') || '';
+        function saveFocus(val) {
+            localStorage.setItem('dailyFocus', val);
+            showToast('專注目標已更新', 'success');
+        }
 
         // Settings Modal Logic
         function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
@@ -589,8 +642,10 @@
         // Drag & Resize Logic
         document.querySelectorAll('.widget').forEach(widget => {
             const header = widget.querySelector('.widget-header');
-            header.addEventListener('mousedown', () => { widget.setAttribute('draggable', 'true'); });
-            header.addEventListener('mouseup', () => { widget.setAttribute('draggable', 'false'); });
+            if(header) {
+                header.addEventListener('mousedown', () => { widget.setAttribute('draggable', 'true'); });
+                header.addEventListener('mouseup', () => { widget.setAttribute('draggable', 'false'); });
+            }
 
             widget.addEventListener('dragstart', function(e) {
                 draggedItem = this;
@@ -618,13 +673,11 @@
             const startWidth = rect.width;
             const startHeight = rect.height;
             
-            // Grid Constants
-            const gap = 24; // var(--grid-gap)
+            const gap = 24; 
             const containerWidth = container.offsetWidth;
             const colWidth = (containerWidth - (11 * gap)) / 12;
-            const rowHeight = 60; // var(--grid-row-height)
+            const rowHeight = 60; 
 
-            // Create Ghost Widget
             const ghost = document.createElement('div');
             ghost.className = 'ghost-widget';
             ghost.style.width = startWidth + 'px';
@@ -632,7 +685,6 @@
             ghost.style.top = (window.scrollY + rect.top) + 'px';
             ghost.style.left = (window.scrollX + rect.left) + 'px';
             
-            // Set initial spans for calculation
             let currentColSpan = Math.round((startWidth + gap) / (colWidth + gap));
             let currentRowSpan = Math.round((startHeight + gap) / (rowHeight + gap));
             ghost.innerText = `${currentColSpan} × ${currentRowSpan}`;
@@ -641,30 +693,24 @@
             widget.classList.add('resizing-source');
 
             function doDrag(e) {
-                // Calculate raw new dimensions
                 const rawWidth = Math.max(100, startWidth + e.clientX - startX);
                 const rawHeight = Math.max(100, startHeight + e.clientY - startY);
                 
-                // Calculate Snapped Spans
                 let newColSpan = Math.round((rawWidth + gap) / (colWidth + gap));
                 let newRowSpan = Math.round((rawHeight + gap) / (rowHeight + gap));
 
-                // Constraints
-                newColSpan = Math.max(3, Math.min(12, newColSpan)); // Min 3 cols, Max 12
-                newRowSpan = Math.max(3, newRowSpan); // Min 3 rows
+                newColSpan = Math.max(3, Math.min(12, newColSpan)); 
+                newRowSpan = Math.max(3, newRowSpan); 
 
-                // Calculate Snapped Pixels for Ghost
                 const snappedWidth = newColSpan * (colWidth + gap) - gap;
                 const snappedHeight = newRowSpan * (rowHeight + gap) - gap;
 
-                // Apply to Ghost (Visual Feedback)
                 ghost.style.width = snappedWidth + 'px';
                 ghost.style.height = snappedHeight + 'px';
                 ghost.innerText = `${newColSpan} × ${newRowSpan}`;
             }
 
             function stopDrag(e) {
-                // Finalize dimensions
                 const finalWidth = parseFloat(ghost.style.width);
                 const finalHeight = parseFloat(ghost.style.height);
                 
