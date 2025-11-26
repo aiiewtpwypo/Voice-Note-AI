@@ -39,7 +39,7 @@
         
         /* 1. 貓咪派對 (Cat Trio) */
         [data-theme="cat"] {
-            --bg-color: #FFF9E6; /* 溫暖米黃 */
+            --bg-color: #FFF9E6; 
             --card-bg: #FFFFFF;
             --primary-color: #F4C095; 
             --primary-dark: #D99E73;
@@ -98,7 +98,7 @@
         [data-theme="midnight"] .widget-music .widget-title { color: #F1F5F9; }
         [data-theme="midnight"] .custom-input { background: #334155; color: #F1F5F9; border-color: #475569; }
 
-        /* --- 游標樣式 (Cursors) --- */
+        /* --- 游標樣式 --- */
         body[data-cursor="grey"] { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="%239FA8B9" stroke="%235D4037" stroke-width="2"/><path d="M8 10 L12 6 M24 10 L20 6" stroke="%235D4037" stroke-width="2"/><circle cx="11" cy="14" r="2" fill="%23FFF"/><circle cx="21" cy="14" r="2" fill="%23FFF"/><path d="M14 20 Q16 22 18 20" stroke="%235D4037" stroke-width="2" fill="none"/></svg>') 16 16, auto; }
         body[data-cursor="grey"] a, body[data-cursor="grey"] button, body[data-cursor="grey"] .clickable { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="%239FA8B9" stroke="%235D4037" stroke-width="2"/><circle cx="11" cy="14" r="3" fill="%23FFF"/><circle cx="21" cy="14" r="3" fill="%23FFF"/><path d="M14 20 Q16 22 18 20" stroke="%235D4037" stroke-width="2" fill="none"/></svg>') 16 16, pointer; }
         body[data-cursor="black"] { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="%23333333" stroke="%23000" stroke-width="1"/><path d="M8 10 L12 6 M24 10 L20 6" stroke="%23333333" stroke-width="2" fill="%23333333"/><circle cx="11" cy="14" r="2" fill="%23A8D672"/><circle cx="21" cy="14" r="2" fill="%23A8D672"/><path d="M15 20 L16 19 L17 20" fill="%23FFB7B2"/></svg>') 16 16, auto; }
@@ -376,7 +376,9 @@
 
         /* Widget Styles */
         .widget-pomodoro { background: linear-gradient(145deg, #FFFFFF 0%, #FFF5ED 100%); justify-content: center; align-items: center; text-align: center; }
-        .timer-wrapper { display: flex; align-items: center; justify-content: center; margin: auto 0; font-family: 'Nunito', sans-serif; height: var(--digit-height); transform: scale(0.9); }
+        .timer-wrapper { display: flex; align-items: center; justify-content: center; margin: auto 0; font-family: 'Nunito', sans-serif; height: var(--digit-height); transform: scale(0.9); cursor: ns-resize; user-select: none; }
+        /* Grouped minutes for easier dragging */
+        .digit-group-minutes { display: flex; position: relative; height: var(--digit-height); overflow: hidden; }
         .digit-group { display: block; position: relative; font-size: 5rem; font-weight: 800; line-height: var(--digit-height); color: var(--primary-dark); overflow: hidden; height: var(--digit-height); width: 0.7em; }
         .digit-wrapper { display: block; position: absolute; top: 0; left: 0; width: 100%; transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .digit { height: var(--digit-height); line-height: var(--digit-height); display: flex; align-items: center; justify-content: center; }
@@ -540,18 +542,20 @@
                 <div style="width: 24px;"></div>
             </div>
             <div class="timer-wrapper">
-                <div class="digit-group"><div class="digit-wrapper" id="min-tens"></div></div>
-                <div class="digit-group"><div class="digit-wrapper" id="min-ones"></div></div>
+                <!-- 分鐘：合併為一個拖曳區塊 -->
+                <div class="digit-group-minutes" id="minutes-group" title="拖曳上下調整分鐘">
+                     <div class="digit-group" id="min-tens"><div class="digit-wrapper"></div></div>
+                     <div class="digit-group" id="min-ones"><div class="digit-wrapper"></div></div>
+                </div>
                 <div class="colon">:</div>
-                <div class="digit-group"><div class="digit-wrapper" id="sec-tens"></div></div>
-                <div class="digit-group"><div class="digit-wrapper" id="sec-ones"></div></div>
+                <!-- 秒數：保持靜態或僅顯示，不做拖曳以簡化 -->
+                <div class="digit-group" id="sec-tens"><div class="digit-wrapper"></div></div>
+                <div class="digit-group" id="sec-ones"><div class="digit-wrapper"></div></div>
             </div>
             <div class="timer-controls">
                 <button class="btn-pill" id="mainBtn" onclick="toggleTimer()"><span>▶ 開始</span></button>
                 <!-- Merged Mode Button -->
                 <button class="btn-circle" id="modeBtn" onclick="toggleMode()" title="切換模式 (專注/休息)">☕</button>
-                <!-- Custom Time Button -->
-                <button class="btn-circle" onclick="askCustomTime()" title="自訂時間">⏱️</button>
                 <button class="btn-circle" onclick="resetTimer()" title="重置">⟳</button>
             </div>
         </div>
@@ -643,9 +647,6 @@
                 <div class="widget-title text-white"><div class="drag-icon" style="color:rgba(255,255,255,0.5)">⋮⋮</div> 🎧 Lo-fi Station</div>
                 <div class="music-controls">
                     <button class="music-btn" onclick="askCustomMusic()" title="自訂連結">🔗</button>
-                    <button class="music-btn" onclick="changeChannel('lofi')" title="Lofi Girl">☕</button>
-                    <button class="music-btn" onclick="changeChannel('jazz')" title="Coffee Jazz">🎷</button>
-                    <button class="music-btn" onclick="changeChannel('synth')" title="Synthwave">🌃</button>
                 </div>
             </div>
             <div class="music-container">
@@ -801,19 +802,6 @@
         };
 
         // Music Channel Logic
-        const channels = {
-            lofi: 'jfKfPfyJRdk',
-            jazz: 'fEvM-OUbaKs', 
-            synth: '4xDzrJKXOOY' 
-        };
-        function changeChannel(type) {
-            const id = channels[type];
-            if(id) {
-                document.getElementById('musicFrame').src = `https://www.youtube.com/embed/${id}?controls=0&autoplay=1`;
-                showToast('已切換頻道', 'success');
-            }
-        }
-
         function extractVideoID(url) {
             const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
             const match = url.match(regExp);
@@ -840,25 +828,9 @@
             if (inputCallback) inputCallback(val);
             closeInputModal();
         }
-        // Allow Enter key to submit
         document.getElementById('customInputValue').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') submitInput();
         });
-
-        function askCustomTime() {
-            openInputModal('設定倒數時間', '請輸入分鐘數 (例如: 45)', (val) => {
-                const min = parseInt(val);
-                if (!isNaN(min) && min > 0) {
-                    setMode(min);
-                    currentMode = 'custom';
-                    const btn = document.getElementById('modeBtn');
-                    btn.innerText = '🎯';
-                    btn.title = "回到專注模式";
-                } else {
-                    showToast("請輸入有效的分鐘數", "error");
-                }
-            });
-        }
 
         function askCustomMusic() {
             openInputModal('自訂音樂連結', '貼上 YouTube 網址或 ID', (val) => {
@@ -926,9 +898,8 @@
 
         // Load saved settings
         function loadSettings() {
-            // Theme
             let savedTheme = localStorage.getItem('selectedTheme');
-            if (savedTheme === 'chiikawa') { // Cleanup old theme
+            if (savedTheme === 'chiikawa') { 
                 savedTheme = '';
                 localStorage.removeItem('selectedTheme');
             }
@@ -936,11 +907,9 @@
                 document.body.setAttribute('data-theme', savedTheme);
             }
 
-            // Cursor
             const savedCursor = localStorage.getItem('selectedCursor');
             if(savedCursor) document.body.setAttribute('data-cursor', savedCursor);
 
-            // Layout
             const savedConfig = JSON.parse(localStorage.getItem('widgetConfig'));
             if (savedConfig) {
                 savedConfig.forEach(conf => {
@@ -1081,19 +1050,89 @@
 
         /* --- 2. Pomodoro Logic --- */
         let timerInterval; let timeLeft = 25 * 60; let isRunning = false; let currentModeTime = 25 * 60;
-        let currentMode = 'focus'; // Default
+        let currentMode = 'focus'; 
 
-        function initDigit(id, val) {
-            const wrapper = document.getElementById(id);
-            let html = ''; for(let i=0; i<=9; i++) html += `<div class="digit">${i}</div>`;
-            wrapper.innerHTML = html; setDigit(id, val);
+        // Setup Time Drag (Vertical Slide for Minutes)
+        function setupTimeDrag() {
+            const minutesGroup = document.getElementById('minutes-group');
+            let startY = 0;
+            let initialMinutes = 0;
+
+            minutesGroup.addEventListener('mousedown', startDrag);
+            minutesGroup.addEventListener('touchstart', startDrag, {passive: false});
+
+            function startDrag(e) {
+                if(isRunning) return;
+                e.preventDefault();
+                startY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+                
+                // Calculate current minutes from stored timeLeft
+                initialMinutes = Math.floor(timeLeft / 60);
+                
+                document.addEventListener('mousemove', onDrag);
+                document.addEventListener('touchmove', onDrag, {passive: false});
+                document.addEventListener('mouseup', endDrag);
+                document.addEventListener('touchend', endDrag);
+            }
+
+            function onDrag(e) {
+                e.preventDefault();
+                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+                const deltaY = startY - clientY; // Drag up to increase
+                
+                // Sensitivity: 10px = 1 min
+                const change = Math.round(deltaY / 10);
+                let newMinutes = initialMinutes + change;
+                newMinutes = Math.max(1, Math.min(99, newMinutes)); // Limit 1-99 mins
+
+                // Update Display immediately
+                updateTimeManually(newMinutes);
+            }
+
+            function endDrag(e) {
+                document.removeEventListener('mousemove', onDrag);
+                document.removeEventListener('touchmove', onDrag);
+                document.removeEventListener('mouseup', endDrag);
+                document.removeEventListener('touchend', endDrag);
+                
+                // Finalize
+                currentModeTime = timeLeft;
+                // Reset mode button to 'Focus' look if custom time
+                const btn = document.getElementById('modeBtn');
+                btn.innerText = '🎯'; 
+                btn.title = "專注模式";
+                currentMode = 'custom';
+                document.getElementById('timerStatus').innerText = `${Math.floor(timeLeft/60)} Min Timer`;
+            }
         }
-        function setDigit(id, val) { document.getElementById(id).style.transform = `translateY(-${val * 80}px)`; }
-        ['min-tens', 'min-ones', 'sec-tens', 'sec-ones'].forEach(id => initDigit(id, 0));
-        updateTimerDisplay();
+
+        function updateTimeManually(minutes) {
+            timeLeft = minutes * 60;
+            updateTimerDisplay();
+        }
+
+        // Initialize
+        function initDigit(id, val) {
+            const wrapper = document.getElementById(id).querySelector('.digit-wrapper');
+            let html = ''; for(let i=0; i<=9; i++) html += `<div class="digit">${i}</div>`;
+            wrapper.innerHTML = html;
+            setDigit(id, val);
+        }
+        function setDigit(id, val) { 
+            document.querySelector(`#${id} .digit-wrapper`).style.transform = `translateY(-${val * 80}px)`; 
+        }
+        
+        // Init digits
+        initDigit('min-tens', 2);
+        initDigit('min-ones', 5);
+        initDigit('sec-tens', 0);
+        initDigit('sec-ones', 0);
+        
+        setupTimeDrag(); // Enable drag interaction
 
         function toggleTimer() { isRunning ? pauseTimer() : startTimer(); }
         function startTimer() {
+            if(timeLeft <= 0) return;
             clearInterval(timerInterval); isRunning = true; updateMainBtn();
             timerInterval = setInterval(() => {
                 if(timeLeft > 0) { timeLeft--; updateTimerDisplay(); }
@@ -1103,7 +1142,6 @@
         function pauseTimer() { clearInterval(timerInterval); isRunning = false; updateMainBtn(); }
         function resetTimer() { pauseTimer(); timeLeft = currentModeTime; updateTimerDisplay(); }
         
-        // Updated setMode logic
         function setMode(m) {
             pauseTimer();
             currentModeTime = m * 60;
@@ -1118,29 +1156,35 @@
 
         function toggleMode() {
             const btn = document.getElementById('modeBtn');
-            if (currentMode === 'focus') {
+            // Simple toggle logic: if Focus (25) -> Break (5), else -> Focus (25)
+            // If currently custom, go back to Focus.
+            if (currentMode === 'focus' || currentMode === 'custom') {
                 setMode(5);
                 currentMode = 'break';
-                btn.innerText = '🎯';
-                btn.title = "切換至專注模式";
+                btn.innerText = '🎯'; // Show Target (to go back to focus)
             } else {
                 setMode(25);
                 currentMode = 'focus';
-                btn.innerText = '☕';
-                btn.title = "切換至休息模式";
+                btn.innerText = '☕'; // Show Coffee (to take a break)
             }
         }
 
         function updateMainBtn() { document.getElementById('mainBtn').innerHTML = isRunning ? `<span>⏸ 暫停</span>` : `<span>▶ 開始</span>`; }
+        
         function updateTimerDisplay() {
             const m = Math.floor(timeLeft / 60); const s = timeLeft % 60;
             const mStr = m.toString().padStart(2, '0'); const sStr = s.toString().padStart(2, '0');
-            setDigit('min-tens', mStr[0]); setDigit('min-ones', mStr[1]);
-            setDigit('sec-tens', sStr[0]); setDigit('sec-ones', sStr[1]);
+            
+            setDigit('min-tens', parseInt(mStr[0]));
+            setDigit('min-ones', parseInt(mStr[1]));
+            setDigit('sec-tens', parseInt(sStr[0]));
+            setDigit('sec-ones', parseInt(sStr[1]));
+            
             document.title = isRunning ? `${mStr}:${sStr} | Focusing` : `Student Dashboard`;
         }
 
         /* --- 3. Todo & Expense Logic --- */
+        // ... (Existing Todo & Expense Logic remains unchanged) ... 
         function loadTodos() {
             const list = document.getElementById('todoList'); list.innerHTML = '';
             const todos = JSON.parse(localStorage.getItem('todos')) || [];
@@ -1196,15 +1240,21 @@
             localStorage.setItem('expenses', JSON.stringify(exps)); loadExpenses();
         }
 
-        /* --- 4. AI Voice Note --- */
-        let voiceRec = false, recognition = null, vInterval, vStart, vElapsed = 0;
+
+        /* --- 4. AI Voice Note Optimized --- */
+        let voiceRec = false, recognition = null, vStart, vElapsed = 0;
+        let voiceAnimationId;
         const apiKey = ""; 
         
         const bars = document.querySelectorAll('.wave-bar');
-        setInterval(() => {
-            if (voiceRec) bars.forEach(b => b.style.height = Math.floor(Math.random()*30+5)+'px');
-            else bars.forEach(b => b.style.height = '5px');
-        }, 100);
+        function animateBars() {
+            if (voiceRec) {
+                bars.forEach(b => b.style.height = Math.floor(Math.random()*30+5)+'px');
+                requestAnimationFrame(animateBars);
+            } else {
+                bars.forEach(b => b.style.height = '5px');
+            }
+        }
 
         function switchVoiceTab(t) {
             document.getElementById('tabTranscript').classList.toggle('active', t==='transcript');
@@ -1217,35 +1267,50 @@
             if (!('webkitSpeechRecognition' in window)) return alert("請使用 Chrome");
             recognition = new webkitSpeechRecognition();
             recognition.lang = 'zh-TW'; recognition.continuous = true; recognition.interimResults = true;
+            
             recognition.onresult = e => {
-                let f = '', inter = '';
+                let final = '';
                 for(let i=e.resultIndex; i<e.results.length; ++i) {
-                    if(e.results[i].isFinal) f += e.results[i][0].transcript; else inter += e.results[i][0].transcript;
+                    if(e.results[i].isFinal) {
+                        final += e.results[i][0].transcript;
+                    }
                 }
-                if(f) document.getElementById('voiceTranscriptArea').value += f;
-                updateAnalyzeBtn();
+                if (final) {
+                    const area = document.getElementById('voiceTranscriptArea');
+                    area.value += final;
+                    updateAnalyzeBtn();
+                }
             };
+            
             recognition.onend = () => { if(voiceRec) recognition.start(); };
+            recognition.onerror = (e) => { console.log('Speech error', e); };
         }
 
         function toggleRecording() {
             if(!recognition) initSpeech();
             const btn = document.getElementById('recordBtn');
             if(voiceRec) {
-                voiceRec = false; recognition.stop(); clearInterval(vInterval);
+                voiceRec = false; recognition.stop(); cancelAnimationFrame(voiceAnimationId);
                 btn.classList.remove('recording'); btn.innerHTML = `<span>●</span> <span>錄音</span>`;
                 document.getElementById('voiceStatus').innerText = "準備就緒";
                 document.getElementById('visualizer').classList.remove('recording-active');
+                animateBars(); // stop animation
             } else {
                 recognition.start(); voiceRec = true; vStart = Date.now() - vElapsed;
-                vInterval = setInterval(() => {
+                
+                function updateVoiceTimerLoop() {
+                    if(!voiceRec) return;
                     vElapsed = Date.now() - vStart;
                     const sec = Math.floor(vElapsed/1000);
                     document.getElementById('voiceTimer').innerText = `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
-                }, 1000);
+                    voiceAnimationId = requestAnimationFrame(updateVoiceTimerLoop);
+                }
+                updateVoiceTimerLoop();
+
                 btn.classList.add('recording'); btn.innerHTML = `<span>■</span> <span>停止</span>`;
                 document.getElementById('voiceStatus').innerText = "錄音中...";
                 document.getElementById('visualizer').classList.add('recording-active');
+                animateBars(); // start animation
             }
         }
 
