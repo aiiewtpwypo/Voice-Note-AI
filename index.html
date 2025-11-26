@@ -2,712 +2,1151 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 語音筆記助手 | Voice Note & AI Summary</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', '"Noto Sans TC"', 'sans-serif'],
-                    },
-                    colors: {
-                        // 使用 CSS 變數來支援動態換色
-                        brand: {
-                            50: 'hsl(var(--brand-h) var(--brand-s) 97%)',
-                            100: 'hsl(var(--brand-h) var(--brand-s) 94%)',
-                            200: 'hsl(var(--brand-h) var(--brand-s) 86%)',
-                            300: 'hsl(var(--brand-h) var(--brand-s) 77%)',
-                            400: 'hsl(var(--brand-h) var(--brand-s) 66%)',
-                            500: 'hsl(var(--brand-h) var(--brand-s) 50%)', // 主要顏色
-                            600: 'hsl(var(--brand-h) var(--brand-s) 42%)',
-                            700: 'hsl(var(--brand-h) var(--brand-s) 35%)',
-                            900: 'hsl(var(--brand-h) var(--brand-s) 25%)',
-                        },
-                        accent: { 50: '#fdf4ff', 100: '#fae8ff', 500: '#d946ef', 600: '#c026d3' }
-                    },
-                    animation: {
-                        'blob': 'blob 7s infinite',
-                        'wave': 'wave 1.2s ease-in-out infinite',
-                        'fade-in': 'fadeIn 0.5s ease-out forwards',
-                    },
-                    keyframes: {
-                        blob: {
-                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
-                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
-                        },
-                        wave: {
-                            '0%, 100%': { height: '10%' },
-                            '50%': { height: '100%' },
-                        },
-                        fadeIn: {
-                            '0%': { opacity: '0', transform: 'translateY(10px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- 引入 Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Plus+Jakarta+Sans:wght@500;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Life Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
+        /* --- CSS 變數系統 (奶茶色系) --- */
         :root {
-            /* 預設主題色 (Teal) */
-            --brand-h: 171;
-            --brand-s: 77%;
+            --bg-color: #F7F5F2;
+            --card-bg: #FFFFFF;
+            --primary-color: #C59D7F;
+            --primary-dark: #8D7B68;
+            --accent-color: #D4A373;
+            --text-main: #4A403A;
+            --text-muted: #9C8E83;
+            --success-color: #A3B18A;
+            --danger-color: #D58989;
+            
+            --radius-lg: 24px;
+            --radius-sm: 16px; /* 統一圓角大小 */
+            --shadow-soft: 0 10px 40px -10px rgba(197, 157, 127, 0.15);
+            --shadow-hover: 0 20px 50px -12px rgba(197, 157, 127, 0.25);
+            --digit-height: 80px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Nunito', 'Noto Sans TC', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background-color: #f3f4f6;
-            overflow-x: hidden;
-            transition: background-color 0.3s ease;
-        }
-        /* 隱藏 Scrollbar 但保持功能 */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        
-        /* 聲波動畫延遲 */
-        .wave-bar:nth-child(1) { animation-delay: 0.0s; }
-        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
-        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
-        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
-        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
-        .wave-bar:nth-child(6) { animation-delay: 0.5s; }
-        .wave-bar:nth-child(7) { animation-delay: 0.3s; }
-        .wave-bar:nth-child(8) { animation-delay: 0.1s; }
-
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px;
+            background-image: radial-gradient(var(--primary-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: 0 0;
         }
 
-        /* 手機版模擬樣式 */
-        .mobile-mode {
-            max-width: 400px !important;
-            min-height: 800px !important;
-            max-height: 90vh;
-            border-radius: 40px !important;
-            flex-direction: column !important;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            border: 8px solid rgba(255,255,255,0.4);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+        /* --- 佈局系統 (Bento Grid) --- */
+        .dashboard-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px; /* 增加間距讓畫面更寬鬆 */
+            padding-bottom: 40px;
+            position: relative; 
+        }
+
+        /* 標題區 */
+        header {
+            grid-column: span 12;
+            padding: 10px 0 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            letter-spacing: -0.5px;
+            margin-bottom: 5px;
         }
         
-        .mobile-mode .panel-left {
-            width: 100% !important;
-            height: auto !important;
-            border-right: none !important;
-            border-bottom: 1px solid rgba(255,255,255,0.5);
-            padding: 1.5rem !important;
+        .header-left .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .clock-display {
+            text-align: right;
+        }
+
+        .time-now {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .date-now {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* 通用卡片樣式 */
+        .widget {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 28px; /* 增加內距 */
+            box-shadow: var(--shadow-soft);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.6);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .widget:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+            border-color: rgba(255,255,255,0.9);
+        }
+
+        .widget.dragging {
+            opacity: 0.4;
+            border: 2px dashed var(--primary-color);
+            box-shadow: none;
+        }
+
+        .widget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
             flex-shrink: 0;
         }
-        
-        .mobile-mode .panel-right {
-            width: 100% !important;
-            flex: 1;
-            padding: 1.5rem !important;
+
+        .widget-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none;
         }
+
+        .drag-handle {
+            cursor: grab;
+            color: var(--text-muted);
+            padding: 6px;
+            border-radius: 6px;
+            transition: background 0.2s;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            pointer-events: auto;
+            opacity: 0.5;
+        }
+        .drag-handle:hover {
+            background: #F0EAE6;
+            color: var(--primary-dark);
+            opacity: 1;
+        }
+        .drag-handle:active { cursor: grabbing; }
+
+        /* --- Grid 尺寸定義 --- */
+        .widget { grid-column: span 12; }
+
+        @media (min-width: 900px) { /* 調整 breakpoint */
+            .w-small { grid-column: span 5; } 
+            .w-large { grid-column: span 7; }
+            .w-full { grid-column: span 12; }
+            .h-tall { grid-row: span 2; }
+        }
+
+        /* --- Widget 1: 番茄鐘 --- */
+        .widget-pomodoro {
+            background: linear-gradient(145deg, #FFFFFF 0%, #FFF5ED 100%);
+            min-height: 340px;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .timer-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 25px 0;
+            font-family: 'Nunito', sans-serif;
+            height: var(--digit-height);
+        }
+
+        .digit-group {
+            display: block;
+            position: relative;
+            font-size: 5.5rem; /* 加大字體 */
+            font-weight: 800;
+            line-height: var(--digit-height);
+            color: var(--primary-dark);
+            overflow: hidden;
+            height: var(--digit-height);
+            width: 0.7em;
+        }
+
+        .digit-wrapper {
+            display: block;
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .digit {
+            height: var(--digit-height);
+            line-height: var(--digit-height);
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .colon {
+            font-size: 4rem; margin: 0 5px; color: var(--accent-color);
+            line-height: var(--digit-height); height: var(--digit-height);
+            display: flex; align-items: center; padding-bottom: 10px;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        .timer-status {
+            font-size: 1.1rem; font-weight: 700; color: var(--text-muted);
+            margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px;
+        }
+
+        .timer-controls { display: flex; gap: 15px; }
+        
+        /* 統一按鈕樣式 */
+        .btn-circle {
+            width: 54px; height: 54px; border-radius: 50%; border: none;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; transition: all 0.2s; background: var(--bg-color); color: var(--text-muted);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        }
+        .btn-circle:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.08); color: var(--primary-dark); }
+        
+        .btn-pill {
+            height: 54px; padding: 0 30px; border-radius: 27px; background: var(--primary-color);
+            color: white; font-size: 1.1rem; font-weight: 700; gap: 8px; border: none;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            transition: all 0.2s; box-shadow: 0 4px 15px rgba(197, 157, 127, 0.3);
+        }
+        .btn-pill:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .btn-pill:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        /* --- Widget 2 & 3: 待辦與記帳 --- */
+        .input-area { display: flex; gap: 12px; margin-bottom: 24px; }
+        
+        input, textarea {
+            flex: 1; padding: 14px 18px; border-radius: var(--radius-sm); border: 2px solid transparent;
+            background: #F4F1EE; font-size: 1rem; color: var(--text-main); transition: all 0.3s;
+        }
+        input:focus, textarea:focus { 
+            outline: none; background: #FFF; border-color: var(--primary-color); 
+            box-shadow: 0 0 0 4px rgba(197, 157, 127, 0.1);
+        }
+        
+        .btn-icon {
+            width: 50px; height: 50px; border-radius: 16px; border: none;
+            background: var(--primary-color); color: white; font-size: 1.4rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(197, 157, 127, 0.2);
+        }
+        .btn-icon:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        
+        .todo-list-container { flex: 1; overflow-y: auto; max-height: 400px; padding-right: 5px; }
+        .todo-item {
+            display: flex; align-items: center; background: #FAFAFA; padding: 14px 18px;
+            margin-bottom: 12px; border-radius: var(--radius-sm); border-left: 5px solid var(--primary-color);
+            transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .todo-item:hover { background: #FFF; transform: translateX(2px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .todo-item.completed { opacity: 0.6; border-left-color: var(--success-color); background: #F7F7F7; }
+        .todo-item.completed span { text-decoration: line-through; color: var(--text-muted); }
+        .checkbox-custom {
+            width: 22px; height: 22px; border: 2px solid var(--primary-color); border-radius: 6px;
+            margin-right: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .checkbox-custom.checked { background: var(--primary-color); }
+        .checkbox-custom.checked::after { content: '✓'; color: white; font-size: 14px; font-weight: bold; }
+
+        .balance-card {
+            background: var(--primary-color); color: white; padding: 24px; border-radius: var(--radius-sm);
+            margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end;
+            background-image: linear-gradient(135deg, var(--primary-color) 0%, #D4A373 100%);
+            box-shadow: 0 8px 20px rgba(197, 157, 127, 0.3);
+        }
+        .balance-label { font-size: 0.9rem; opacity: 0.9; margin-bottom: 6px; font-weight: 600; }
+        .balance-amount { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+        .expense-list-container { flex: 1; overflow-y: auto; max-height: 250px; }
+        .expense-item {
+            display: flex; justify-content: space-between; padding: 14px 0;
+            border-bottom: 1px dashed #E0E0E0; font-size: 1rem; align-items: center;
+        }
+        .expense-price { font-weight: 700; color: var(--danger-color); }
+        .btn-text-danger {
+            background: none; border: none; color: #CCC; cursor: pointer;
+            font-size: 1.4rem; margin-left: 10px; padding: 0 5px; transition: color 0.2s;
+        }
+        .btn-text-danger:hover { color: var(--danger-color); }
+        .empty-placeholder { text-align: center; color: var(--text-muted); padding: 40px 0; font-size: 0.95rem; }
+        
+        /* --- Widget 4: AI Voice Note (視覺優化) --- */
+        .widget-voice {
+            min-height: 500px;
+        }
+        
+        .voice-layout {
+            display: flex;
+            gap: 24px;
+            flex: 1;
+            overflow: hidden;
+            background: #FFFFFF;
+        }
+        
+        /* 左側控制面板 */
+        .voice-controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: linear-gradient(to bottom, #FFFCF9, #F7F5F2); /* 漸層背景區分 */
+            border-radius: var(--radius-sm);
+            padding: 24px;
+            border: 1px solid #F0F0F0;
+        }
+
+        .visualizer-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .visualizer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 60px;
+            margin-bottom: 20px;
+        }
+        .wave-bar {
+            width: 6px;
+            height: 6px;
+            background-color: #E0E0E0;
+            border-radius: 99px;
+            transition: all 0.15s ease-out;
+        }
+        .recording-active .wave-bar {
+            background-color: var(--danger-color); /* 錄音時顯示紅色系 */
+            box-shadow: 0 0 8px rgba(213, 137, 137, 0.4);
+        }
+
+        .voice-timer {
+            font-size: 3rem;
+            font-weight: 300;
+            color: var(--text-main);
+            font-variant-numeric: tabular-nums;
+            margin-bottom: 5px;
+        }
+
+        .voice-status {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        /* 錄音按鈕特殊樣式 */
+        .btn-record-large {
+            width: 100%;
+            padding: 16px;
+            border-radius: 20px;
+            background: var(--text-main);
+            color: white;
+            border: none;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .btn-record-large:hover { transform: translateY(-2px); background: #332b26; }
+        
+        .btn-record-large.recording { 
+            background: var(--danger-color); 
+            box-shadow: 0 0 0 4px rgba(213, 137, 137, 0.2);
+        }
+        .btn-record-large.recording:hover { background: #c47676; }
+
+        .voice-actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .btn-sub {
+            padding: 12px;
+            border-radius: 12px;
+            background: white;
+            border: 1px solid #E5E5E5;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-sub:hover { background: #FFF; border-color: var(--primary-color); color: var(--primary-dark); }
+        
+        .btn-ai-magic {
+            background: linear-gradient(135deg, #FFF5ED 0%, #FFF 100%);
+            color: var(--primary-dark);
+            border: 1px solid rgba(197, 157, 127, 0.3);
+        }
+        .btn-ai-magic:hover { background: #FFF0E3; border-color: var(--primary-color); }
+        .btn-ai-magic:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* 右側內容面板 */
+        .voice-content-panel {
+            flex: 1.5;
+            display: flex;
+            flex-direction: column;
+            background: #FFF;
+            border-radius: var(--radius-sm);
+            border: 1px solid #F0F0F0; /* 讓邊框更淡，融入卡片 */
+            overflow: hidden;
+            position: relative;
+        }
+
+        .voice-tabs {
+            display: flex;
+            padding: 6px;
+            margin: 12px;
+            background: #F4F1EE;
+            border-radius: 12px;
+        }
+        .voice-tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            background: transparent;
+            border: none;
+        }
+        .voice-tab.active {
+            background: white;
+            color: var(--primary-dark);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .voice-textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 0 20px 20px 20px;
+            font-size: 1rem;
+            color: var(--text-main);
+            line-height: 1.8;
+            background: transparent;
+            font-weight: 400;
+        }
+
+        /* AI 結果樣式 */
+        .ai-results {
+            padding: 0 20px 20px 20px;
+            overflow-y: auto;
+            height: 100%;
+            flex: 1;
+        }
+        .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .tag {
+            background: #F0EAE6;
+            color: var(--primary-dark);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        
+        .ai-card {
+            background: #FFFCF9;
+            border: 1px solid #F5EFE9;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .ai-card h4 {
+            font-size: 0.8rem; font-weight: 800; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .ai-text { font-size: 0.95rem; line-height: 1.7; color: var(--text-main); text-align: justify; }
+
+        .action-list { display: flex; flex-direction: column; gap: 8px; }
+        .action-item-box {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 12px; background: white; border: 1px solid #EEE;
+            border-radius: 12px; font-size: 0.95rem; transition: all 0.2s;
+        }
+        .action-item-box:hover { border-color: var(--primary-color); transform: translateX(2px); }
+
+        /* Loader */
+        .loader-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9); z-index: 10;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid #EEE;
+            border-top-color: var(--primary-color); border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* RWD */
+        @media (max-width: 768px) {
+            .voice-layout { flex-direction: column; }
+            .voice-content-panel { min-height: 350px; }
+            .dashboard-container { grid-template-columns: 1fr; }
+            .widget { grid-column: span 1 !important; }
+        }
+
+        /* Toast & Scrollbar */
+        #toastContainer { position: fixed; top: 24px; right: 24px; z-index: 100; pointer-events: none; }
+        .toast {
+            background: white; padding: 14px 24px; border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.12); border-left: 6px solid;
+            margin-bottom: 12px; font-size: 0.95rem; font-weight: 700; color: var(--text-main);
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: auto;
+            display: flex; align-items: center; gap: 10px;
+        }
+        @keyframes slideIn { from { transform: translateX(100%) scale(0.9); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #DBC8B6; border-radius: 10px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4 relative selection:bg-brand-200 selection:text-brand-900">
+<body>
 
-    <!-- 背景裝飾 (動態光暈，顏色會跟隨主題變換) -->
-    <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-        <div id="bgBlob1" class="absolute top-0 left-1/4 w-96 h-96 bg-brand-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob transition-colors duration-700"></div>
-        <div id="bgBlob2" class="absolute top-0 right-1/4 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000 transition-colors duration-700"></div>
-        <div id="bgBlob3" class="absolute -bottom-8 left-1/3 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-4000 transition-colors duration-700"></div>
-    </div>
+    <div class="dashboard-container" id="dashboardGrid">
+        <header>
+            <div class="header-left">
+                <h1>Student Dashboard</h1>
+                <div class="subtitle">Focus, Plan, and Achieve.</div>
+            </div>
+            <div class="clock-display">
+                <div class="time-now" id="clockTime">00:00</div>
+                <div class="date-now" id="clockDate">Loading...</div>
+            </div>
+        </header>
 
-    <!-- 頂部工具列 -->
-    <div class="fixed top-4 right-4 z-50 flex items-center gap-3 bg-white/80 backdrop-blur-md p-2 rounded-full shadow-lg border border-white/50">
-        
-        <!-- 顏色選擇器 Trigger -->
-        <div class="relative group">
-            <button id="themeBtn" class="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-600" title="更換主題色">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-brand-500">
-                    <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm11.378-3.917c-.89-.777-2.366-.777-3.255 0a.75.75 0 01-.988-1.129c1.454-1.272 3.776-1.272 5.23 0 1.513 1.324 1.513 3.518 0 4.842a3.75 3.75 0 01-.837.552c-.676.328-1.028.774-1.028 1.152v.75a.75.75 0 01-1.5 0v-.75c0-1.279 1.06-2.107 1.875-2.502.182-.088.351-.199.503-.331.83-.727.83-1.857 0-2.584zM12 18a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd" />
-                    <path d="M20.25 12a8.25 8.25 0 11-16.5 0 8.25 8.25 0 0116.5 0zm-10.5-6a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm6.364 1.864a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM6 10.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm3.364 6.364a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM18 13.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
-                </svg>
-            </button>
-            <!-- 顏色選單 (修復版：增加 pt-4 作為隱形橋樑，並調整結構確保 hover 不中斷) -->
-            <div class="absolute right-0 top-full pt-4 w-48 hidden group-hover:block hover:block z-50">
-                <div class="p-3 bg-white rounded-2xl shadow-xl border border-gray-100 transform transition-all duration-200 origin-top-right">
-                    <p class="text-xs font-bold text-gray-400 mb-2 px-1">選擇主題色</p>
-                    <div class="grid grid-cols-5 gap-2 mb-3">
-                        <button onclick="setTheme(171, '77%')" class="w-6 h-6 rounded-full bg-[#14b8a6] ring-2 ring-offset-1 ring-transparent hover:ring-gray-300 transition-shadow" title="Teal"></button>
-                        <button onclick="setTheme(217, '91%')" class="w-6 h-6 rounded-full bg-[#3b82f6] ring-2 ring-offset-1 ring-transparent hover:ring-gray-300 transition-shadow" title="Blue"></button>
-                        <button onclick="setTheme(270, '95%')" class="w-6 h-6 rounded-full bg-[#a855f7] ring-2 ring-offset-1 ring-transparent hover:ring-gray-300 transition-shadow" title="Purple"></button>
-                        <button onclick="setTheme(340, '82%')" class="w-6 h-6 rounded-full bg-[#f43f5e] ring-2 ring-offset-1 ring-transparent hover:ring-gray-300 transition-shadow" title="Rose"></button>
-                        <button onclick="setTheme(32, '95%')" class="w-6 h-6 rounded-full bg-[#f97316] ring-2 ring-offset-1 ring-transparent hover:ring-gray-300 transition-shadow" title="Orange"></button>
-                    </div>
-                    <div class="border-t pt-2">
-                         <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer hover:text-brand-600 transition-colors">
-                            <input type="color" id="customColorPicker" class="w-5 h-5 rounded cursor-pointer border-none bg-transparent" oninput="setCustomTheme(this.value)">
-                            自定義顏色
-                        </label>
-                    </div>
-                </div>
+        <!-- Widget 1: 番茄鐘 -->
+        <div class="widget widget-pomodoro w-small" draggable="true" data-id="pomodoro">
+            <div class="widget-header">
+                <div class="drag-handle" title="拖曳">⋮⋮</div>
+                <div class="timer-status" id="timerStatus" style="margin:0; flex:1; text-align:center;">Ready to Focus?</div>
+                <div style="width: 24px;"></div>
+            </div>
+
+            <div class="timer-wrapper">
+                <div class="digit-group"><div class="digit-wrapper" id="min-tens"></div></div>
+                <div class="digit-group"><div class="digit-wrapper" id="min-ones"></div></div>
+                <div class="colon">:</div>
+                <div class="digit-group"><div class="digit-wrapper" id="sec-tens"></div></div>
+                <div class="digit-group"><div class="digit-wrapper" id="sec-ones"></div></div>
+            </div>
+
+            <div class="timer-controls">
+                <button class="btn-pill" id="mainBtn" onclick="toggleTimer()">
+                    <span>▶ 開始專注</span>
+                </button>
+                <button class="btn-circle" onclick="setMode(5)" title="休息 5 分鐘">☕</button>
+                <button class="btn-circle" onclick="resetTimer()" title="重置">⟳</button>
             </div>
         </div>
 
-        <div class="w-px h-6 bg-gray-200"></div>
-
-        <!-- 視圖切換按鈕 -->
-        <button id="viewToggleBtn" onclick="toggleViewMode()" class="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-600 flex items-center gap-2" title="切換手機/電腦檢視">
-            <span id="viewIconDesktop" class="block">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                    <path d="M11.47 3.84a.75.75 0 011.06 0l8.635 8.635a.75.75 0 11-1.06 1.06l-8.635-8.635a.75.75 0 010-1.06z" />
-                    <path d="M12.75 7.5a.75.75 0 00-1.5 0v9.863l-1.84-1.84a.75.75 0 00-1.06 1.06l3.113 3.114a.75.75 0 001.274 0l3.114-3.114a.75.75 0 00-1.06-1.06l-1.841 1.84V7.5z" />
-                    <path d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" fill-opacity="0" /> 
-                    <path d="M10.5 1.875a1.125 1.125 0 012.25 0v8.219c.517.162 1.02.382 1.5.659V3.375a1.125 1.125 0 00-2.25 0v10.929a3.755 3.755 0 11-1.5 0V1.875z" />
-                    <path fill-rule="evenodd" d="M2.25 6.75c0-2.485 2.015-4.5 4.5-4.5h10.5a4.5 4.5 0 014.5 4.5v10.5a4.5 4.5 0 01-4.5 4.5H6.75a4.5 4.5 0 01-4.5-4.5V6.75zm4.5-3a3 3 0 00-3 3v10.5a3 3 0 003 3h10.5a3 3 0 003-3V6.75a3 3 0 00-3-3H6.75z" clip-rule="evenodd" />
-                    <path d="M18.75 19.5h-13.5v-12h13.5v12z" opacity="0.3"/>
-                </svg>
-            </span>
-             <span id="viewIconMobile" class="hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-brand-600">
-                    <path d="M10.5 18.75a.75.75 0 000 1.5h3a.75.75 0 000-1.5h-3z" />
-                    <path fill-rule="evenodd" d="M8.625 1.5a3.375 3.375 0 00-3.375 3.375v14.25A3.375 3.375 0 008.625 22.5h6.75a3.375 3.375 0 003.375-3.375V4.875A3.375 3.375 0 0015.375 1.5h-6.75zM7.5 4.875a1.875 1.875 0 011.875-1.875h6.75a1.875 1.875 0 011.875 1.875v14.25a1.875 1.875 0 01-1.875 1.875h-6.75A1.875 1.875 0 017.5 19.125V4.875z" clip-rule="evenodd" />
-                </svg>
-            </span>
-            <span class="text-xs font-bold hidden md:block" id="viewModeText">切換手機版</span>
-        </button>
-    </div>
-
-    <!-- 主應用容器 -->
-    <div id="appContainer" class="container max-w-5xl w-full glass-panel shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] rounded-[2.5rem] overflow-hidden flex flex-col md:flex-row min-h-[650px] transition-all duration-500">
-        
-        <!-- 左側控制面板 -->
-        <div class="panel-left w-full md:w-1/3 bg-white/40 border-r border-white/50 p-8 flex flex-col justify-between relative transition-all duration-500">
+        <!-- Widget 2: 待辦事項 -->
+        <div class="widget widget-todo w-large h-tall" draggable="true" data-id="todo">
+            <div class="widget-header">
+                <div class="widget-title"><div class="drag-handle">⋮⋮</div> 📝 待辦清單</div>
+                <button onclick="clearCompleted()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-weight:600; font-size:0.9rem;">清除完成</button>
+            </div>
             
-            <!-- App Header -->
-            <div>
-                <div class="flex items-center gap-3 mb-2">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-400 to-brand-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/30 transition-all duration-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                            <path d="M8.25 4.5a3.75 3.75 0 117.5 0v8.25a3.75 3.75 0 11-7.5 0V4.5z" />
-                            <path d="M6 10.5a.75.75 0 01.75.75v1.5a5.25 5.25 0 1010.5 0v-1.5a.75.75 0 011.5 0v1.5a6.751 6.751 0 01-6 6.709v2.291h3a.75.75 0 010 1.5h-7.5a.75.75 0 010-1.5h3v-2.291a6.751 6.751 0 01-6-6.709v-1.5A.75.75 0 016 10.5z" />
-                        </svg>
-                    </div>
-                    <h1 class="text-xl font-bold text-gray-800 tracking-tight">Voice Note AI</h1>
-                </div>
-                <p class="text-xs font-medium text-gray-400 pl-1 tracking-wider">RECORD & SUMMARIZE</p>
+            <div class="input-area">
+                <input type="text" id="todoInput" placeholder="今天想完成什麼？" onkeypress="if(event.key==='Enter') addTodo()">
+                <button class="btn-icon" onclick="addTodo()">＋</button>
             </div>
 
-            <!-- 視覺化聲波 -->
-            <div class="flex-1 flex flex-col justify-center items-center py-8 md:py-12">
-                <div id="visualizer" class="h-16 flex items-center gap-1.5 opacity-30 transition-opacity duration-300">
-                    <!-- 動態生成的 Bar -->
-                    <div class="wave-bar w-1.5 h-3 bg-gray-800 rounded-full transition-all duration-300"></div>
-                    <div class="wave-bar w-1.5 h-5 bg-gray-800 rounded-full transition-all duration-300"></div>
-                    <div class="wave-bar w-1.5 h-8 bg-gray-800 rounded-full transition-all duration-300"></div>
-                    <div class="wave-bar w-1.5 h-4 bg-gray-800 rounded-full transition-all duration-300"></div>
-                    <div class="wave-bar w-1.5 h-7 bg-gray-800 rounded-full transition-all duration-300"></div>
-                    <div class="wave-bar w-1.5 h-3 bg-gray-800 rounded-full transition-all duration-300"></div>
-                    <div class="wave-bar w-1.5 h-5 bg-gray-800 rounded-full transition-all duration-300"></div>
-                    <div class="wave-bar w-1.5 h-2 bg-gray-800 rounded-full transition-all duration-300"></div>
-                </div>
-                <div id="timerDisplay" class="mt-6 text-4xl font-bold text-gray-800 font-sans tabular-nums tracking-tight">00:00</div>
-                <div id="statusText" class="mt-2 text-sm font-medium text-gray-400 bg-white/50 px-3 py-1 rounded-full">Ready to record</div>
-            </div>
-
-            <!-- 主要按鈕 -->
-            <div class="flex flex-col gap-3">
-                <button id="recordButton" class="group w-full py-4 rounded-2xl bg-gray-900 text-white font-bold text-lg shadow-xl shadow-gray-900/20 hover:scale-[1.02] hover:bg-black transition-all duration-300 flex items-center justify-center gap-3">
-                    <div class="w-3 h-3 rounded-full bg-red-500 group-hover:animate-ping"></div>
-                    <span id="recordBtnText">Start Recording</span>
-                </button>
-
-                <div class="flex gap-3">
-                     <button id="clearButton" class="flex-1 py-3 rounded-xl bg-white border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 hover:border-gray-300 transition-all duration-300">
-                        清除
-                    </button>
-                    <button id="summarizeButton" disabled class="flex-[2] py-3 rounded-xl bg-gradient-to-r from-brand-500 to-brand-400 text-white font-bold text-sm shadow-lg shadow-brand-500/25 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed hover:shadow-brand-500/40 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
-                            <path fill-rule="evenodd" d="M9 4.5a.75.75 0 01.721.544l.813 2.846a3.75 3.75 0 002.576 2.576l2.846.813a.75.75 0 010 1.442l-2.846.813a3.75 3.75 0 00-2.576 2.576l-.813 2.846a.75.75 0 01-1.442 0l-.813-2.846a3.75 3.75 0 00-2.576-2.576l-2.846-.813a.75.75 0 010-1.442l2.846-.813a3.75 3.75 0 002.576-2.576l.813-2.846A.75.75 0 019 4.5zM6.375 9a2.25 2.25 0 012.25-2.25h5a2.25 2.25 0 012.25 2.25v5a2.25 2.25 0 01-2.25 2.25h-5A2.25 2.25 0 016.375 14v-5z" clip-rule="evenodd" />
-                        </svg>
-                        AI 分析
-                    </button>
-                </div>
-            </div>
+            <div class="todo-list-container" id="todoList"></div>
         </div>
 
-        <!-- 右側內容顯示區 -->
-        <div class="panel-right w-full md:w-2/3 bg-white/60 p-8 flex flex-col transition-all duration-500">
-            
-            <!-- Tab Switcher -->
-            <div class="flex items-center p-1 bg-gray-200/50 rounded-xl w-fit mb-6 backdrop-blur-sm mx-auto md:mx-0">
-                <button id="tabTranscript" class="px-5 py-2 rounded-lg text-sm font-bold text-gray-800 bg-white shadow-sm transition-all duration-300">逐字稿</button>
-                <button id="tabAnalysis" class="px-5 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-700 transition-all duration-300 relative">
-                    AI 洞察
-                    <span id="aiBadge" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand-500 rounded-full ring-2 ring-white"></span>
-                </button>
+        <!-- Widget 3: 記帳 -->
+        <div class="widget widget-expense w-small" draggable="true" data-id="expense">
+            <div class="widget-header">
+                <div class="widget-title"><div class="drag-handle">⋮⋮</div> 💰 收支紀錄</div>
             </div>
 
-            <!-- 內容區域 -->
-            <div class="flex-1 relative overflow-hidden min-h-[300px]">
-                
-                <!-- 1. 逐字稿視圖 -->
-                <div id="viewTranscript" class="absolute inset-0 flex flex-col h-full transition-all duration-500 ease-out">
-                    <textarea id="transcriptArea" class="w-full h-full bg-transparent border-none resize-none outline-none text-gray-700 text-lg leading-relaxed font-medium placeholder-gray-400/70 no-scrollbar" placeholder="點擊「Start Recording」開始，您的對話將即時顯示於此..."></textarea>
-                    
-                    <!-- 底部工具列 -->
-                    <div class="absolute bottom-0 right-0 flex gap-2">
-                         <button onclick="copyText()" class="p-2 rounded-lg bg-white/80 hover:bg-white text-gray-500 hover:text-brand-600 shadow-sm border border-gray-100 transition-colors text-xs font-bold flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
-                            </svg>
-                            複製
-                        </button>
-                        <button onclick="downloadTxt()" class="p-2 rounded-lg bg-white/80 hover:bg-white text-gray-500 hover:text-brand-600 shadow-sm border border-gray-100 transition-colors text-xs font-bold flex items-center gap-1">
-                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                            </svg>
-                            存檔
-                        </button>
-                    </div>
+            <div class="balance-card">
+                <div>
+                    <div class="balance-label">本月總支出</div>
+                    <div class="balance-amount" id="totalAmount">$0</div>
                 </div>
+                <div style="font-size: 2.5rem; opacity: 0.4;">💸</div>
+            </div>
 
-                <!-- 2. AI 分析視圖 (初始隱藏) -->
-                <div id="viewAnalysis" class="absolute inset-0 h-full overflow-y-auto no-scrollbar opacity-0 translate-x-10 pointer-events-none transition-all duration-500 ease-out pb-10">
-                    
-                    <!-- Loading State -->
-                    <div id="aiLoading" class="hidden flex flex-col items-center justify-center h-full text-gray-400 space-y-4">
-                        <div class="relative w-16 h-16">
-                            <div class="absolute top-0 left-0 w-full h-full border-4 border-brand-100 rounded-full"></div>
-                            <div class="absolute top-0 left-0 w-full h-full border-4 border-brand-500 rounded-full border-t-transparent animate-spin"></div>
+            <div class="input-area" style="margin-bottom: 15px;">
+                <input type="text" id="expenseName" placeholder="項目" style="flex: 2;">
+                <input type="number" id="expenseAmount" placeholder="$" style="flex: 1;">
+                <button class="btn-icon" onclick="addExpense()" style="width: 50px; height: 50px; font-size:1.2rem;">＋</button>
+            </div>
+
+            <div class="expense-list-container" id="expenseList"></div>
+        </div>
+
+        <!-- Widget 4: AI Voice Note (視覺整合版) -->
+        <div class="widget widget-voice w-full" draggable="true" data-id="voice">
+            <div class="widget-header">
+                <div class="widget-title"><div class="drag-handle">⋮⋮</div> 🎙️ AI 語音筆記助手</div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--primary-color); background: rgba(197, 157, 127, 0.1); padding: 4px 10px; border-radius: 20px;">Gemini Powered</div>
+            </div>
+
+            <div class="voice-layout">
+                <!-- 左側：控制面板 -->
+                <div class="voice-controls">
+                    <div class="visualizer-container">
+                        <div class="visualizer" id="visualizer">
+                            <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+                            <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+                            <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
                         </div>
-                        <p class="text-sm font-medium animate-pulse">AI 正在消化內容並提煉精華...</p>
+                        <div class="voice-timer" id="voiceTimer">00:00</div>
+                        <div class="voice-status" id="voiceStatus">準備就緒</div>
                     </div>
 
-                    <!-- Empty State -->
-                    <div id="aiEmpty" class="flex flex-col items-center justify-center h-full text-gray-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mb-4 opacity-50">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-                        </svg>
-                        <p>請錄音並點擊「AI 分析」</p>
+                    <div>
+                        <button id="recordBtn" class="btn-record-large" onclick="toggleRecording()">
+                            <span id="recordIcon">●</span> <span id="recordText">開始錄音</span>
+                        </button>
+                        <div class="voice-actions-grid">
+                            <button class="btn-sub" onclick="clearTranscript()">🗑️ 清除</button>
+                            <button id="analyzeBtn" class="btn-sub btn-ai-magic" onclick="analyzeWithAI()" disabled>✨ AI 分析</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右側：內容面板 -->
+                <div class="voice-content-panel">
+                    <div class="voice-tabs">
+                        <button id="tabTranscript" class="voice-tab active" onclick="switchVoiceTab('transcript')">逐字稿</button>
+                        <button id="tabInsights" class="voice-tab" onclick="switchVoiceTab('insights')">AI 洞察</button>
                     </div>
 
-                    <!-- Result Content -->
-                    <div id="aiContent" class="hidden space-y-6">
+                    <!-- 逐字稿區域 -->
+                    <textarea id="voiceTranscriptArea" class="voice-textarea" placeholder="點擊錄音，您的筆記將顯示於此..."></textarea>
+                    
+                    <!-- AI 分析結果區域 -->
+                    <div id="voiceInsightsArea" class="ai-results" style="display: none;">
+                        <div id="aiEmptyState" class="empty-placeholder" style="height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                            <div style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;">🧠</div>
+                            <p>錄音後點擊「AI 分析」<br>自動生成摘要與待辦</p>
+                        </div>
                         
-                        <!-- 標籤區 -->
-                        <div class="flex flex-wrap gap-2" id="aiTags">
-                            <!-- Tags will be injected here -->
-                        </div>
+                        <div id="aiContent" style="display: none;">
+                            <div class="tag-cloud" id="aiTags"></div>
+                            
+                            <div class="ai-card">
+                                <h4>📝 重點摘要</h4>
+                                <div id="aiSummary" class="ai-text"></div>
+                            </div>
 
-                        <!-- 摘要區 -->
-                        <div class="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-sm">
-                            <h3 class="text-brand-700 font-bold mb-3 flex items-center gap-2 text-sm uppercase tracking-wider">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
-                                    <path fill-rule="evenodd" d="M4.125 3C3.089 3 2.25 3.84 2.25 4.875V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V4.875C21.75 3.84 20.911 3 19.875 3H4.125zM12 9.75a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5H12zm-.75-2.25a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5H12a.75.75 0 01-.75-.75zM6 12.75a.75.75 0 000 1.5h12a.75.75 0 000-1.5H6zm0 4.5a.75.75 0 000 1.5h12a.75.75 0 000-1.5H6z" clip-rule="evenodd" />
-                                </svg>
-                                重點摘要
-                            </h3>
-                            <div id="aiSummaryText" class="text-gray-700 leading-relaxed text-base prose-sm"></div>
+                            <div class="ai-card" style="background: #FFF; border-color: #EEE;">
+                                <h4>✅ 待辦建議</h4>
+                                <div id="aiActions" class="action-list"></div>
+                            </div>
                         </div>
+                    </div>
 
-                        <!-- 待辦事項區 -->
-                        <div class="bg-accent-50/80 rounded-2xl p-6 border border-accent-100 shadow-sm">
-                            <h3 class="text-accent-600 font-bold mb-3 flex items-center gap-2 text-sm uppercase tracking-wider">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
-                                    <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" />
-                                </svg>
-                                待辦事項 (Action Items)
-                            </h3>
-                            <ul id="aiActionItems" class="space-y-2">
-                                <!-- Action items will be injected here -->
-                            </ul>
-                        </div>
-
+                    <!-- Loading Overlay -->
+                    <div id="aiLoading" class="loader-overlay" style="display: none;">
+                        <div class="spinner"></div>
+                        <p id="loadingText" style="font-size: 0.9rem; font-weight: 700; color: var(--primary-dark);">正在整理思緒...</p>
                     </div>
                 </div>
-
             </div>
         </div>
+
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed top-6 right-6 px-6 py-3 bg-gray-800 text-white rounded-full shadow-2xl transform translate-x-full opacity-0 transition-all duration-500 font-medium text-sm flex items-center gap-2 z-50">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-green-400">
-            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" />
-        </svg>
-        <span id="toastMsg">Operation successful</span>
-    </div>
+    <div id="toastContainer"></div>
 
     <script>
-        // --- State Management ---
-        let isRecording = false;
-        let recognition = null;
-        let startTime;
-        let timerInterval;
-        let finalTranscript = '';
-        let currentViewMode = 'desktop'; // 'desktop' or 'mobile'
-        
-        // --- DOM Elements ---
-        const els = {
-            recordBtn: document.getElementById('recordButton'),
-            recordBtnText: document.getElementById('recordBtnText'),
-            clearBtn: document.getElementById('clearButton'),
-            summarizeBtn: document.getElementById('summarizeButton'),
-            transcriptArea: document.getElementById('transcriptArea'),
-            visualizer: document.getElementById('visualizer'),
-            bars: document.querySelectorAll('.wave-bar'),
-            timer: document.getElementById('timerDisplay'),
-            status: document.getElementById('statusText'),
-            appContainer: document.getElementById('appContainer'),
-            viewToggleBtn: document.getElementById('viewToggleBtn'),
-            viewIconDesktop: document.getElementById('viewIconDesktop'),
-            viewIconMobile: document.getElementById('viewIconMobile'),
-            viewModeText: document.getElementById('viewModeText'),
-            
-            // Tabs
-            tabTranscript: document.getElementById('tabTranscript'),
-            tabAnalysis: document.getElementById('tabAnalysis'),
-            viewTranscript: document.getElementById('viewTranscript'),
-            viewAnalysis: document.getElementById('viewAnalysis'),
-            aiBadge: document.getElementById('aiBadge'),
+        /* --- 1. System Logic --- */
+        function updateClock() {
+            const now = new Date();
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const hours = now.getHours().toString().padStart(2, '0');
+            const mins = now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('clockTime').innerText = `${hours}:${mins}`;
+            document.getElementById('clockDate').innerText = `${now.getFullYear()}.${(now.getMonth()+1).toString().padStart(2,'0')}.${now.getDate()} ${days[now.getDay()]}`;
+        }
+        setInterval(updateClock, 1000); updateClock();
 
-            // AI View
-            aiLoading: document.getElementById('aiLoading'),
-            aiEmpty: document.getElementById('aiEmpty'),
-            aiContent: document.getElementById('aiContent'),
-            aiTags: document.getElementById('aiTags'),
-            aiSummary: document.getElementById('aiSummaryText'),
-            aiActionItems: document.getElementById('aiActionItems'),
-            
-            // Toast
-            toast: document.getElementById('toast'),
-            toastMsg: document.getElementById('toastMsg')
-        };
+        /* Drag & Drop */
+        const container = document.getElementById('dashboardGrid');
+        let draggedItem = null;
 
-        // --- Gemini API Configuration ---
-        const apiKey = ""; 
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        function loadLayout() {
+            const savedOrder = JSON.parse(localStorage.getItem('widgetOrder'));
+            if (savedOrder) {
+                savedOrder.forEach(id => {
+                    const widget = document.querySelector(`.widget[data-id="${id}"]`);
+                    if(widget) container.appendChild(widget);
+                });
+            }
+        }
+        loadLayout();
 
-        // --- Setup Speech Recognition ---
-        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.lang = 'zh-TW';
-            recognition.interimResults = true;
-            recognition.continuous = true;
-
-            recognition.onresult = (event) => {
-                let interimTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        finalTranscript += transcript + ' '; // Space implies pause
-                    } else {
-                        interimTranscript += transcript;
-                    }
-                }
-                // Auto-punctuation logic can be complex, keeping it raw for now
-                els.transcriptArea.value = finalTranscript + interimTranscript;
-                els.transcriptArea.scrollTop = els.transcriptArea.scrollHeight;
-                
-                if((finalTranscript + interimTranscript).length > 0) {
-                    els.summarizeBtn.disabled = false;
-                }
-            };
-
-            recognition.onerror = (event) => {
-                if(event.error !== 'no-speech') {
-                    console.error('Speech Error:', event.error);
-                    showToast('錄音暫時中斷，請重試', true);
-                    stopRecording();
-                }
-            };
-            
-            recognition.onend = () => {
-                if (isRecording) recognition.start(); // Auto-restart
-            };
-        } else {
-            alert('您的瀏覽器不支援語音識別，請使用 Chrome。');
-            els.recordBtn.disabled = true;
+        function saveLayout() {
+            const currentOrder = Array.from(document.querySelectorAll('.widget')).map(w => w.dataset.id);
+            localStorage.setItem('widgetOrder', JSON.stringify(currentOrder));
         }
 
-        // --- Logic Functions ---
-
-        function startRecording() {
-            isRecording = true;
-            finalTranscript = els.transcriptArea.value; // Keep existing text
-            recognition.start();
-            
-            // UI Update
-            els.status.textContent = 'Recording in progress...';
-            els.status.classList.add('text-red-500', 'bg-red-50');
-            els.status.classList.remove('text-gray-400');
-            
-            els.recordBtn.classList.replace('bg-gray-900', 'bg-red-500');
-            els.recordBtn.classList.replace('hover:bg-black', 'hover:bg-red-600');
-            els.recordBtnText.textContent = 'Stop Recording';
-            
-            // Visualizer
-            els.visualizer.classList.replace('opacity-30', 'opacity-100');
-            els.bars.forEach(bar => {
-                bar.classList.add('animate-wave');
-                bar.classList.replace('bg-gray-800', 'bg-red-500');
+        document.querySelectorAll('.widget').forEach(widget => {
+            widget.addEventListener('dragstart', function() {
+                draggedItem = this;
+                setTimeout(() => this.classList.add('dragging'), 0);
             });
+            widget.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                draggedItem = null;
+                saveLayout();
+            });
+            widget.querySelectorAll('input, textarea, button').forEach(el => {
+                el.addEventListener('mousedown', (e) => e.stopPropagation());
+            });
+        });
 
-            // Timer
-            startTime = Date.now();
-            timerInterval = setInterval(updateTimer, 1000);
-            
-            switchToTab('transcript');
+        container.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(container, e.clientY, e.clientX);
+            if (afterElement == null) container.appendChild(draggedItem);
+            else container.insertBefore(draggedItem, afterElement);
+        });
+
+        function getDragAfterElement(container, y, x) {
+            const draggableElements = [...container.querySelectorAll('.widget:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offsetY = y - box.top - box.height / 2;
+                if (offsetY < 0 && offsetY > closest.offsetY) return { offset: offsetY, element: child, offsetY: offsetY };
+                else return closest;
+            }, { offset: Number.NEGATIVE_INFINITY, offsetY: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        /* --- 2. Pomodoro Logic --- */
+        let timerInterval;
+        let timeLeft = 25 * 60;
+        let isRunning = false;
+        let currentModeTime = 25 * 60; 
+        
+        function initDigit(id, initialVal) {
+            const wrapper = document.getElementById(id);
+            let html = '';
+            for(let i=0; i<=9; i++) html += `<div class="digit">${i}</div>`;
+            wrapper.innerHTML = html;
+            setDigit(id, initialVal);
+        }
+
+        function setDigit(id, val) {
+            const wrapper = document.getElementById(id);
+            wrapper.style.transform = `translateY(-${val * 80}px)`; // matches --digit-height
+        }
+
+        ['min-tens', 'min-ones', 'sec-tens', 'sec-ones'].forEach(id => initDigit(id, 0));
+        updateTimerDisplay();
+
+        function toggleTimer() { isRunning ? pauseTimer() : startTimer(); }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            isRunning = true;
+            updateMainBtn();
+            timerInterval = setInterval(() => {
+                if(timeLeft > 0) { timeLeft--; updateTimerDisplay(); }
+                else { pauseTimer(); showToast("⏰ 時間到！該休息了", "success"); resetTimer(); }
+            }, 1000);
+        }
+
+        function pauseTimer() { clearInterval(timerInterval); isRunning = false; updateMainBtn(); }
+
+        function resetTimer() { pauseTimer(); timeLeft = currentModeTime; updateTimerDisplay(); }
+
+        function setMode(minutes) {
+            pauseTimer();
+            currentModeTime = minutes * 60;
+            timeLeft = currentModeTime;
+            const statusText = document.getElementById('timerStatus');
+            if(minutes === 25) {
+                statusText.innerText = "Focus Time"; statusText.style.color = "var(--primary-dark)";
+            } else {
+                statusText.innerText = "Break Time"; statusText.style.color = "var(--success-color)";
+            }
+            updateTimerDisplay();
+        }
+
+        function updateMainBtn() {
+            const btn = document.getElementById('mainBtn');
+            if (isRunning) {
+                btn.innerHTML = `<span>⏸ 暫停</span>`; btn.style.background = "var(--primary-dark)";
+            } else {
+                btn.innerHTML = `<span>▶ 開始專注</span>`; btn.style.background = "var(--primary-color)";
+            }
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timeLeft / 60); const s = timeLeft % 60;
+            const mStr = m.toString().padStart(2, '0'); const sStr = s.toString().padStart(2, '0');
+            setDigit('min-tens', mStr[0]); setDigit('min-ones', mStr[1]);
+            setDigit('sec-tens', sStr[0]); setDigit('sec-ones', sStr[1]);
+            document.title = isRunning ? `${mStr}:${sStr} | Focusing` : `Student Dashboard`;
+        }
+
+        /* --- 3. Todo & Expense Logic --- */
+        function loadTodos() {
+            const todos = JSON.parse(localStorage.getItem('todos')) || [];
+            const list = document.getElementById('todoList');
+            list.innerHTML = '';
+            if (todos.length === 0) { list.innerHTML = `<div class="empty-placeholder">目前沒有待辦事項</div>`; return; }
+            todos.forEach((todo, index) => {
+                const item = document.createElement('div');
+                item.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+                item.innerHTML = `
+                    <div style="display:flex; align-items:center; flex:1;">
+                        <div class="checkbox-custom ${todo.completed ? 'checked' : ''}" onclick="toggleTodo(${index})"></div>
+                        <span onclick="toggleTodo(${index})" style="cursor:pointer;">${escapeHtml(todo.text)}</span>
+                    </div>
+                    <button class="btn-text-danger" onclick="deleteTodo(${index})">×</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+        function addTodo() {
+            const input = document.getElementById('todoInput');
+            const text = input.value.trim();
+            if(!text) return;
+            const todos = JSON.parse(localStorage.getItem('todos')) || [];
+            todos.push({ text, completed: false });
+            localStorage.setItem('todos', JSON.stringify(todos));
+            input.value = ''; loadTodos();
+        }
+        function toggleTodo(index) {
+            const todos = JSON.parse(localStorage.getItem('todos'));
+            todos[index].completed = !todos[index].completed;
+            localStorage.setItem('todos', JSON.stringify(todos)); loadTodos();
+        }
+        function deleteTodo(index) {
+            const todos = JSON.parse(localStorage.getItem('todos'));
+            todos.splice(index, 1);
+            localStorage.setItem('todos', JSON.stringify(todos)); loadTodos();
+        }
+        function clearCompleted() {
+            let todos = JSON.parse(localStorage.getItem('todos')) || [];
+            todos = todos.filter(t => !t.completed);
+            localStorage.setItem('todos', JSON.stringify(todos)); loadTodos();
+        }
+
+        function loadExpenses() {
+            const expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+            const list = document.getElementById('expenseList');
+            const totalEl = document.getElementById('totalAmount');
+            let total = 0;
+            list.innerHTML = '';
+            if (expenses.length === 0) { list.innerHTML = `<div class="empty-placeholder">尚無支出紀錄</div>`; totalEl.innerText = "$0"; return; }
+            expenses.slice().reverse().forEach((item, revIdx) => {
+                const realIdx = expenses.length - 1 - revIdx;
+                total += parseInt(item.amount);
+                const div = document.createElement('div');
+                div.className = 'expense-item';
+                div.innerHTML = `
+                    <span style="color:var(--text-main); font-weight:600;">${escapeHtml(item.name)}</span>
+                    <div style="display:flex; align-items:center;">
+                        <span class="expense-price">-$${item.amount}</span>
+                        <button class="btn-text-danger" onclick="deleteExpense(${realIdx})">×</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            totalEl.innerText = `$${total}`;
+        }
+        function addExpense() {
+            const nameIn = document.getElementById('expenseName'); const amtIn = document.getElementById('expenseAmount');
+            const name = nameIn.value.trim(); const amount = parseInt(amtIn.value);
+            if(!name || isNaN(amount) || amount <= 0) return;
+            const expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+            expenses.push({ name, amount });
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+            nameIn.value = ''; amtIn.value = ''; loadExpenses();
+        }
+        function deleteExpense(index) {
+            if(!confirm("確定刪除此筆紀錄？")) return;
+            const expenses = JSON.parse(localStorage.getItem('expenses'));
+            expenses.splice(index, 1);
+            localStorage.setItem('expenses', JSON.stringify(expenses)); loadExpenses();
+        }
+
+        /* --- 4. AI Voice Note Logic --- */
+        const apiKey = ""; 
+        let voiceRecording = false;
+        let recognition = null;
+        let voiceInterval = null;
+        let voiceStartTime = 0;
+        let voiceElapsedTime = 0;
+        let currentTranscript = "";
+        let loadingInterval = null;
+
+        const bars = document.querySelectorAll('.wave-bar');
+        setInterval(() => {
+            if (voiceRecording) {
+                bars.forEach(bar => bar.style.height = Math.floor(Math.random() * 40 + 6) + 'px');
+            } else {
+                bars.forEach(bar => bar.style.height = '6px');
+            }
+        }, 100);
+
+        function switchVoiceTab(tab) {
+            const tabT = document.getElementById('tabTranscript');
+            const tabI = document.getElementById('tabInsights');
+            const areaT = document.getElementById('voiceTranscriptArea');
+            const areaI = document.getElementById('voiceInsightsArea');
+
+            if(tab === 'transcript') {
+                tabT.classList.add('active'); tabI.classList.remove('active');
+                areaT.style.display = 'block'; areaI.style.display = 'none';
+            } else {
+                tabI.classList.add('active'); tabT.classList.remove('active');
+                areaI.style.display = 'block'; areaT.style.display = 'none';
+            }
+        }
+
+        function initSpeech() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.lang = 'zh-TW';
+                recognition.continuous = true;
+                recognition.interimResults = true;
+
+                recognition.onresult = (event) => {
+                    let interim = '';
+                    let final = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) final += event.results[i][0].transcript;
+                        else interim += event.results[i][0].transcript;
+                    }
+                    if (final) currentTranscript += final;
+                    document.getElementById('voiceTranscriptArea').value = currentTranscript + interim;
+                    updateAnalyzeButton();
+                };
+
+                recognition.onerror = (e) => {
+                    if (e.error === 'not-allowed') {
+                        showToast('麥克風權限被拒', 'error'); stopRecording();
+                    }
+                };
+                recognition.onend = () => { if (voiceRecording) recognition.start(); };
+            } else {
+                alert("請使用 Chrome 瀏覽器以支援語音識別。");
+            }
+        }
+
+        function toggleRecording() {
+            if (!recognition) initSpeech();
+            const btn = document.getElementById('recordBtn');
+            const status = document.getElementById('voiceStatus');
+            const visualizer = document.getElementById('visualizer');
+
+            if (voiceRecording) {
+                stopRecording();
+            } else {
+                recognition.start();
+                voiceRecording = true;
+                voiceStartTime = Date.now() - voiceElapsedTime;
+                voiceInterval = setInterval(updateVoiceTimer, 1000);
+                
+                btn.classList.add('recording');
+                btn.innerHTML = `<span>■</span> <span>停止錄音</span>`;
+                status.innerText = "正在錄製...";
+                status.style.color = "var(--danger-color)";
+                visualizer.classList.add('recording-active');
+            }
         }
 
         function stopRecording() {
-            isRecording = false;
-            recognition.stop();
-            
-            // UI Update
-            els.status.textContent = 'Recording paused';
-            els.status.classList.remove('text-red-500', 'bg-red-50');
-            els.status.classList.add('text-gray-400');
-            
-            els.recordBtn.classList.replace('bg-red-500', 'bg-gray-900');
-            els.recordBtn.classList.replace('hover:bg-red-600', 'hover:bg-black');
-            els.recordBtnText.textContent = 'Resume Recording';
-            
-            // Visualizer
-            els.visualizer.classList.replace('opacity-100', 'opacity-30');
-            els.bars.forEach(bar => {
-                bar.classList.remove('animate-wave');
-                bar.classList.replace('bg-red-500', 'bg-gray-800');
-            });
+            voiceRecording = false;
+            if(recognition) recognition.stop();
+            clearInterval(voiceInterval);
 
-            clearInterval(timerInterval);
-            if(els.transcriptArea.value.length > 5) els.summarizeBtn.disabled = false;
+            const btn = document.getElementById('recordBtn');
+            const status = document.getElementById('voiceStatus');
+            const visualizer = document.getElementById('visualizer');
+
+            btn.classList.remove('recording');
+            btn.innerHTML = `<span>●</span> <span>開始錄音</span>`;
+            status.innerText = "準備就緒";
+            status.style.color = "var(--text-muted)";
+            visualizer.classList.remove('recording-active');
         }
 
-        function updateTimer() {
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
-            const s = (elapsed % 60).toString().padStart(2, '0');
-            els.timer.textContent = `${m}:${s}`;
+        function updateVoiceTimer() {
+            voiceElapsedTime = Date.now() - voiceStartTime;
+            const totalSec = Math.floor(voiceElapsedTime / 1000);
+            const m = Math.floor(totalSec / 60).toString().padStart(2, '0');
+            const s = (totalSec % 60).toString().padStart(2, '0');
+            document.getElementById('voiceTimer').innerText = `${m}:${s}`;
         }
 
-        async function summarize() {
-            const text = els.transcriptArea.value.trim();
-            if (text.length < 10) {
-                showToast('內容太短，無法分析', true);
-                return;
-            }
+        function clearTranscript() {
+            if (voiceRecording) stopRecording();
+            currentTranscript = "";
+            voiceElapsedTime = 0;
+            document.getElementById('voiceTranscriptArea').value = "";
+            document.getElementById('voiceTimer').innerText = "00:00";
+            document.getElementById('aiEmptyState').style.display = 'flex';
+            document.getElementById('aiContent').style.display = 'none';
+            updateAnalyzeButton();
+            showToast("內容已清除", "success");
+        }
 
-            switchToTab('analysis');
-            els.aiLoading.classList.remove('hidden');
-            els.aiEmpty.classList.add('hidden');
-            els.aiContent.classList.add('hidden');
-            els.summarizeBtn.disabled = true;
+        function updateAnalyzeButton() {
+            const hasText = document.getElementById('voiceTranscriptArea').value.trim().length > 0;
+            document.getElementById('analyzeBtn').disabled = !hasText;
+        }
+
+        async function analyzeWithAI() {
+            const text = document.getElementById('voiceTranscriptArea').value;
+            if (!text.trim()) return;
+
+            switchVoiceTab('insights');
+            document.getElementById('aiEmptyState').style.display = 'none';
+            document.getElementById('aiContent').style.display = 'none';
+            document.getElementById('aiLoading').style.display = 'flex';
+            
+            const texts = ["正在整理思緒...", "提取關鍵概念...", "生成待辦事項...", "最後整理中..."];
+            let idx = 0;
+            const loadingText = document.getElementById('loadingText');
+            loadingInterval = setInterval(() => loadingText.innerText = texts[++idx % texts.length], 1500);
 
             const prompt = `
-                你是一個專業的筆記分析師。請閱讀以下逐字稿，並產生一個 JSON 格式的回應，不需要 Markdown 標記，包含以下三個欄位：
-                1. summary: 一段流暢的繁體中文重點摘要（約 100 字）。
-                2. tags: 3-5 個關鍵字標籤（Array of strings）。
-                3. action_items: 條列出任何需要執行的待辦事項或決策，如果沒有明確事項，請歸納出關鍵結論（Array of strings）。
-
-                逐字稿內容：
-                ${text}
+            You are a student assistant. Analyze this transcript and return ONLY valid JSON:
+            {
+                "summary": "Concise summary in Traditional Chinese (approx 50 words)",
+                "tags": ["Tag1", "Tag2", "Tag3"],
+                "action_items": ["Action 1", "Action 2"]
+            }
+            Transcript: ${text}
             `;
 
             try {
-                const response = await fetch(apiUrl, {
+                let key = apiKey;
+                if (!key) {
+                    key = prompt("請輸入 Gemini API Key:", "");
+                    if (!key) throw new Error("缺少 API Key");
+                }
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }]
-                    })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
 
-                const data = await response.json();
-                const rawText = data.candidates[0].content.parts[0].text;
-                
-                // Clean code block markers if present
-                const jsonString = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-                const result = JSON.parse(jsonString);
+                if (!response.ok) throw new Error('API Error');
 
-                renderAIResult(result);
+                const data = await response.json();
+                let rawText = data.candidates[0].content.parts[0].text;
+                rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+                const result = JSON.parse(rawText);
+
+                renderAiResults(result);
+                showToast('AI 分析完成！', 'success');
 
             } catch (error) {
                 console.error(error);
-                showToast('AI 分析失敗，請稍後再試', true);
-                els.aiLoading.classList.add('hidden');
-                els.aiEmpty.classList.remove('hidden');
+                showToast('分析失敗: ' + error.message, 'error');
+                document.getElementById('aiLoading').style.display = 'none';
+                document.getElementById('aiEmptyState').style.display = 'flex';
             } finally {
-                els.summarizeBtn.disabled = false;
+                clearInterval(loadingInterval);
             }
         }
 
-        function renderAIResult(data) {
-            // Hide Loading
-            els.aiLoading.classList.add('hidden');
-            els.aiContent.classList.remove('hidden');
-            
-            // 1. Tags
-            els.aiTags.innerHTML = data.tags.map(tag => 
-                `<span class="px-3 py-1 rounded-full bg-white border border-brand-100 text-brand-600 text-xs font-bold shadow-sm">#${tag}</span>`
+        function renderAiResults(data) {
+            document.getElementById('aiLoading').style.display = 'none';
+            document.getElementById('aiContent').style.display = 'block';
+
+            document.getElementById('aiTags').innerHTML = data.tags.map(tag => 
+                `<span class="tag">#${tag}</span>`
             ).join('');
 
-            // 2. Summary
-            els.aiSummary.textContent = data.summary;
+            document.getElementById('aiSummary').innerText = data.summary;
 
-            // 3. Action Items
-            els.aiActionItems.innerHTML = data.action_items.map(item => `
-                <li class="flex items-start gap-2 text-gray-700 text-sm">
-                    <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-accent-500 flex-shrink-0"></div>
+            document.getElementById('aiActions').innerHTML = data.action_items.map(item => 
+                `<div class="action-item-box">
+                    <input type="checkbox" style="width:16px; height:16px; margin:0; flex-shrink:0;">
                     <span>${item}</span>
-                </li>
-            `).join('');
-            
-            // Show badge
-            els.aiBadge.classList.remove('hidden');
-            showToast('AI 分析完成！');
+                </div>`
+            ).join('');
         }
 
-        // --- Theme & View Logic ---
-
-        function setTheme(h, s) {
-            document.documentElement.style.setProperty('--brand-h', h);
-            document.documentElement.style.setProperty('--brand-s', s);
-            
-            // 更新背景光暈顏色 (簡單的視覺反饋)
-            const blob1 = document.getElementById('bgBlob1');
-            blob1.classList.remove('bg-brand-300', 'bg-blue-300', 'bg-purple-300', 'bg-rose-300', 'bg-orange-300');
-            // 這裡使用 inline style 比較直接
-            blob1.style.backgroundColor = `hsl(${h}, ${s}, 80%)`;
-        }
-
-        function setCustomTheme(hex) {
-            // Convert Hex to HSL
-            let c = hex.substring(1);
-            let rgb = parseInt(c, 16);
-            let r = (rgb >> 16) & 0xff;
-            let g = (rgb >>  8) & 0xff;
-            let b = (rgb >>  0) & 0xff;
-            
-            r /= 255, g /= 255, b /= 255;
-            let max = Math.max(r, g, b), min = Math.min(r, g, b);
-            let h, s, l = (max + min) / 2;
-
-            if (max == min) {
-                h = s = 0; // achromatic
-            } else {
-                let d = max - min;
-                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-                switch (max) {
-                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                    case g: h = (b - r) / d + 2; break;
-                    case b: h = (r - g) / d + 4; break;
-                }
-                h /= 6;
-            }
-            
-            setTheme(Math.round(h * 360), Math.round(s * 100) + '%');
-        }
-
-        function toggleViewMode() {
-            if(currentViewMode === 'desktop') {
-                currentViewMode = 'mobile';
-                els.appContainer.classList.add('mobile-mode');
-                els.viewIconDesktop.classList.add('hidden');
-                els.viewIconMobile.classList.remove('hidden');
-                els.viewModeText.textContent = '切換電腦版';
-            } else {
-                currentViewMode = 'desktop';
-                els.appContainer.classList.remove('mobile-mode');
-                els.viewIconDesktop.classList.remove('hidden');
-                els.viewIconMobile.classList.add('hidden');
-                els.viewModeText.textContent = '切換手機版';
-            }
-        }
-
-        // --- UI Helper Functions ---
-
-        function switchToTab(tab) {
-            if (tab === 'transcript') {
-                els.tabTranscript.className = 'px-5 py-2 rounded-lg text-sm font-bold text-gray-800 bg-white shadow-sm transition-all duration-300';
-                els.tabAnalysis.className = 'px-5 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-700 transition-all duration-300 relative';
-                
-                els.viewTranscript.classList.remove('opacity-0', 'translate-x-10', 'pointer-events-none');
-                els.viewAnalysis.classList.add('opacity-0', 'translate-x-10', 'pointer-events-none');
-            } else {
-                els.tabAnalysis.className = 'px-5 py-2 rounded-lg text-sm font-bold text-brand-700 bg-white shadow-sm transition-all duration-300 relative';
-                els.tabTranscript.className = 'px-5 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-700 transition-all duration-300';
-                
-                els.viewAnalysis.classList.remove('opacity-0', 'translate-x-10', 'pointer-events-none');
-                els.viewTranscript.classList.add('opacity-0', 'translate-x-10', 'pointer-events-none');
-                
-                els.aiBadge.classList.add('hidden'); // Clear badge on view
-            }
-        }
-
-        function showToast(msg, isError = false) {
-            els.toastMsg.textContent = msg;
-            els.toast.classList.remove('translate-x-full', 'opacity-0');
-            
-            // Error style
-            if(isError) {
-                els.toast.querySelector('svg').classList.replace('text-green-400', 'text-red-400');
-            } else {
-                els.toast.querySelector('svg').classList.replace('text-red-400', 'text-green-400');
-            }
-
+        /* --- 5. Helper Functions --- */
+        function showToast(msg, type) {
+            const container = document.getElementById('toastContainer');
+            const div = document.createElement('div');
+            div.className = 'toast';
+            div.style.borderLeftColor = type === 'error' ? 'var(--danger-color)' : 'var(--success-color)';
+            const icon = type === 'error' ? '⚠️' : '✅';
+            div.innerHTML = `<span>${icon}</span> <span>${msg}</span>`;
+            container.appendChild(div);
             setTimeout(() => {
-                els.toast.classList.add('translate-x-full', 'opacity-0');
+                div.style.opacity = '0';
+                div.style.transform = 'translateX(100%)';
+                setTimeout(() => div.remove(), 300);
             }, 3000);
         }
 
-        function copyText() {
-            if(!els.transcriptArea.value) return;
-            navigator.clipboard.writeText(els.transcriptArea.value);
-            showToast('逐字稿已複製');
+        function escapeHtml(text) {
+            if (!text) return text;
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
-        function downloadTxt() {
-            if(!els.transcriptArea.value) return;
-            const blob = new Blob([els.transcriptArea.value], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `voice-note-${new Date().toISOString().slice(0,10)}.txt`;
-            a.click();
-            URL.revokeObjectURL(url);
-            showToast('檔案已下載');
-        }
-
-        // --- Event Listeners ---
-        els.recordBtn.addEventListener('click', () => isRecording ? stopRecording() : startRecording());
-        els.clearBtn.addEventListener('click', () => {
-            if(confirm('確定清除所有內容？')) {
-                els.transcriptArea.value = '';
-                finalTranscript = '';
-                els.timer.textContent = '00:00';
-                els.aiLoading.classList.add('hidden');
-                els.aiContent.classList.add('hidden');
-                els.aiEmpty.classList.remove('hidden');
-                els.summarizeBtn.disabled = true;
-                stopRecording();
-                showToast('已清除');
-            }
-        });
-        els.summarizeBtn.addEventListener('click', summarize);
-        els.tabTranscript.addEventListener('click', () => switchToTab('transcript'));
-        els.tabAnalysis.addEventListener('click', () => switchToTab('analysis'));
+        // Init
+        loadTodos();
+        loadExpenses();
+        document.getElementById('voiceTranscriptArea').addEventListener('input', updateAnalyzeButton);
 
     </script>
 </body>
